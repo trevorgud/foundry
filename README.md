@@ -88,20 +88,27 @@ The generated world data remains local under `foundry-data/` and is ignored by G
 
 ## Automated Checks
 
-The repo includes a Playwright-based smoke test harness. The default Makefile targets run Playwright inside Docker so the host machine does not need browser dependencies installed.
+The repo includes a dev/test overlay at `compose.dev.yml`. The base `compose.yml` remains the simple game-server runtime; the dev overlay adds Dockerized Playwright and forces the local `pawn16-test` world for automation.
 
 ```bash
-make restart
+make dev-restart
 make test
 ```
 
 Useful targets:
 
 ```bash
+make up          # server-only Foundry runtime
+make restart     # server-only recreate
+make dev-up      # Foundry with dev/test overlay
+make dev-restart # recreate Foundry with pawn16-test auto-launched
 make state       # writes and prints test-results/pawn16-state.json
 make screenshot  # writes test-results/pawn16-board.png
 make logs        # follows Foundry logs
 ```
+
+The Playwright commands run inside Docker, so the host does not need Node, npm, Playwright, Chromium, or browser shared libraries for the default dev/test path.
+If `node_modules/` is missing, the test container installs dependencies from `package-lock.json` before running the command.
 
 The smoke test launches the `pawn16-test` world, logs in as `Gamemaster`, resets the board, and validates structured Foundry state:
 

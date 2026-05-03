@@ -10,13 +10,21 @@ Important environment variables:
 
 ```yaml
 FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-change-this-admin-password}
-FOUNDRY_WORLD=${FOUNDRY_WORLD:-pawn16-test}
+FOUNDRY_WORLD=${FOUNDRY_WORLD:-}
 CONTAINER_CACHE=/data/container_cache
 ```
 
-`FOUNDRY_WORLD=pawn16-test` is important for automation. The container regenerates Foundry's `Config/options.json` from environment variables on startup, so patching `options.json` alone is not reliable for Docker restarts.
+The base `compose.yml` intentionally does not force a world. This keeps `docker compose up -d` as a simple server-only runtime.
 
-When `FOUNDRY_WORLD` is set, Foundry launches the world during server startup and browser clients land on `/join`, not `/setup`.
+`compose.dev.yml` sets:
+
+```yaml
+FOUNDRY_WORLD=pawn16-test
+```
+
+That setting is important for automation. The container regenerates Foundry's `Config/options.json` from environment variables on startup, so patching `options.json` alone is not reliable for Docker restarts.
+
+When `FOUNDRY_WORLD` is set by the dev overlay, Foundry launches the world during server startup and browser clients land on `/join`, not `/setup`.
 
 ## Useful URLs
 
@@ -50,7 +58,7 @@ The Playwright login helper should wait for `/join` or `/game` before deciding w
 Working pattern:
 
 ```js
-await page.goto("http://localhost:30000", { waitUntil: "domcontentloaded" });
+await page.goto(process.env.FOUNDRY_URL ?? "http://localhost:30000", { waitUntil: "domcontentloaded" });
 await page.waitForURL(/\/(?:join|game)/, { timeout: 30000 });
 
 if (!page.url().includes("/game")) {
@@ -163,19 +171,26 @@ Use screenshots when state assertions pass but the visual presentation still loo
 
 The host machine may not have browser dependencies such as `libnspr4.so`. Running Playwright directly with `npm test` can fail in that case.
 
-The Makefile runs Playwright inside Microsoft's Docker image:
+The Makefile runs Playwright through `compose.dev.yml` inside Microsoft's Docker image:
 
-```make
-PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.59.1-noble
+```yaml
+test:
+  image: mcr.microsoft.com/playwright:v1.59.1-noble
+  environment:
+    - FOUNDRY_URL=http://foundry:30000
 ```
 
 Use:
 
 ```bash
+make dev-restart
 make test
 make state
 make screenshot
 ```
+
+The test container reaches Foundry over Docker DNS at `http://foundry:30000`, not host `localhost`.
+If `node_modules/` is missing, the Makefile installs dependencies inside the Playwright container with `npm ci`; no host Node/npm installation is required for the default Make targets.
 
 There is also a local fallback:
 

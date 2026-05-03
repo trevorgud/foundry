@@ -1,0 +1,15 @@
+services:
+  foundry:
+    environment:
+      - FOUNDRY_WORLD=pawn16-test
+
+  test:
+    image: mcr.microsoft.com/playwright:v1.59.1-noble
+    working_dir: /work
+    volumes:
+      - .:/work
+    environment:
+      - FOUNDRY_URL=http://foundry:30000
+      - NPM_CONFIG_UPDATE_NOTIFIER=false
+    depends_on:
+      - foundry
