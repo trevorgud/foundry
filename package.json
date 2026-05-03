@@ -1,0 +1,19 @@
+{
+  "name": "foundry",
+  "version": "1.0.0",
+  "description": "Minimal Docker Compose setup for running Foundry Virtual Tabletop with a manually supplied Node.js distribution zip.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:foundry": "playwright test tests/foundry-smoke.spec.js",
+    "foundry:state": "node scripts/foundry-state.mjs",
+    "foundry:screenshot": "node scripts/foundry-screenshot.mjs",
+    "foundry:configure-world": "node scripts/configure-foundry.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

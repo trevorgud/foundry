@@ -9,5 +9,6 @@ When a GM opens a world using this system, it seeds:
 - 16 black pawns
 - Helper macros for moving a selected pawn forward and resetting the board
 - An unpaused game state so players can move tokens immediately
+- No board image tile; the board uses Foundry's native square grid
 
 The seed script is idempotent: it creates missing pieces without committing generated world data.

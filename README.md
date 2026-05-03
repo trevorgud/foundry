@@ -86,6 +86,36 @@ When the world opens, the system seeds a native 16x16 Foundry grid scene named `
 
 The generated world data remains local under `foundry-data/` and is ignored by Git.
 
+## Automated Checks
+
+The repo includes a Playwright-based smoke test harness. The default Makefile targets run Playwright inside Docker so the host machine does not need browser dependencies installed.
+
+```bash
+make restart
+make test
+```
+
+Useful targets:
+
+```bash
+make state       # writes and prints test-results/pawn16-state.json
+make screenshot  # writes test-results/pawn16-board.png
+make logs        # follows Foundry logs
+```
+
+The smoke test launches the `pawn16-test` world, logs in as `Gamemaster`, resets the board, and validates structured Foundry state:
+
+- world/system loaded correctly
+- game is unpaused
+- active board scene is `1280x1280`
+- native grid size is `80`
+- no seeded board image tiles exist
+- 32 pawn tokens exist
+- pawn rotations are locked at `0`
+- white and black pawns are on their starting ranks
+
+The main feedback artifact is JSON at `test-results/pawn16-state.json`. Screenshots are saved locally for debugging and are ignored by Git.
+
 ## Notes
 
 - The compose file pins `ghcr.io/felddy/foundryvtt:14.360.0`, so the zip should be named `foundryvtt-14.360.zip`.

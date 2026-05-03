@@ -10,6 +10,7 @@ services:
 
     environment:
       - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-change-this-admin-password}
+      - FOUNDRY_WORLD=${FOUNDRY_WORLD:-pawn16-test}
       - CONTAINER_CACHE=/data/container_cache
 
     volumes:

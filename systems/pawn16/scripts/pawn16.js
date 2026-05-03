@@ -1,6 +1,7 @@
 import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
 import { moveSelectedPawnForward, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
+import { assertHealthy, testState, unpause } from "./test-api.js";
 
 Hooks.once("init", () => {
   console.info("Pawn16 | Initializing");
@@ -20,9 +21,12 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   game.pawn16 = {
+    assertHealthy,
     moveSelectedPawnForward,
     resetBoard: resetPawn16Board,
     seedWorld: seedPawn16World,
+    testState,
+    unpause,
     rules: {
       legalPawnMoves
     }
