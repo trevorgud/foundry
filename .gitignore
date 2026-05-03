@@ -1,0 +1,9 @@
+# Runtime data is local-only, but keep the directory documentation committed.
+foundry-data/*
+!foundry-data/README.md
+
+# Foundry distribution archives are licensed downloads and must not be committed.
+foundry-install/*
+!foundry-install/README.md
+
+.env

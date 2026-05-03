@@ -1,0 +1,18 @@
+services:
+  foundry:
+    image: ghcr.io/felddy/foundryvtt:14.360.0
+    container_name: foundry-test
+    hostname: foundry-test
+    restart: unless-stopped
+
+    ports:
+      - "30000:30000"
+
+    environment:
+      - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY:-change-this-admin-password}
+      - CONTAINER_CACHE=/data/container_cache
+
+    volumes:
+      - ./foundry-data:/data
+      - ./foundry-install:/data/container_cache
+      - ./systems/pawn16:/data/Data/systems/pawn16:ro

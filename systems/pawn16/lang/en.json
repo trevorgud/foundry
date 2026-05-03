@@ -1,0 +1,6 @@
+{
+  "PAWN16.Settings.AutoSeed.Name": "Auto-seed Pawn16 board",
+  "PAWN16.Settings.AutoSeed.Hint": "Create the demo board, pawn actors, pawn tokens, and helper macros when a GM opens a Pawn16 world.",
+  "PAWN16.Controls.MoveForward": "Pawn16: Move Selected Pawn Forward",
+  "PAWN16.Controls.Reset": "Pawn16: Reset Board"
+}

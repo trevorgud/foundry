@@ -1,0 +1,40 @@
+{
+  "id": "pawn16",
+  "title": "Pawn16",
+  "description": "A tiny reproducible Foundry VTT test system: a 16x16 board with pawns only.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.360"
+  },
+  "authors": [
+    {
+      "name": "Trevor"
+    }
+  ],
+  "esmodules": [
+    "scripts/pawn16.js"
+  ],
+  "styles": [
+    "styles/pawn16.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "documentTypes": {
+    "Actor": {
+      "pawn": {}
+    }
+  },
+  "socket": false,
+  "grid": {
+    "distance": 1,
+    "units": "sq"
+  },
+  "primaryTokenAttribute": null,
+  "secondaryTokenAttribute": null
+}
