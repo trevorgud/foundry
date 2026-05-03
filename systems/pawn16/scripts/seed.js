@@ -10,7 +10,6 @@ import {
 } from "./rules.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
-const BOARD_ASSET = "systems/pawn16/assets/board-16x16.svg";
 const WHITE_PAWN_ASSET = "systems/pawn16/assets/white-pawn.svg";
 const BLACK_PAWN_ASSET = "systems/pawn16/assets/black-pawn.svg";
 
@@ -20,9 +19,10 @@ export async function seedPawn16World() {
 
   const scene = await ensureBoardScene();
   const actors = await ensurePawnActors();
-  await ensureBoardTile(scene);
+  await removeBoardTiles(scene);
   await ensurePawnTokens(scene, actors);
   await ensureMacros();
+  unpauseGame();
 
   if (!scene.active) await scene.activate();
   console.info("Pawn16 | Demo board is ready.");
@@ -46,7 +46,9 @@ export async function resetPawn16Board() {
   }
 
   const actors = await ensurePawnActors({ reset: true });
+  await removeBoardTiles(scene);
   await ensurePawnTokens(scene, actors);
+  unpauseGame();
   if (!scene.active) await scene.activate();
   ui.notifications.info("Pawn16 board reset.");
 }
@@ -83,12 +85,32 @@ export async function moveSelectedPawnForward() {
   }
 
   const position = squareToPixel(move.file, move.rank);
-  await token.document.update(position);
+  await token.document.update({
+    ...position,
+    rotation: 0,
+    lockRotation: true
+  });
   await actor.update({
     "system.file": move.file,
     "system.rank": move.rank,
     "system.hasMoved": true
   });
+}
+
+export async function syncPawnStateFromToken(tokenDocument, changed = {}) {
+  if (!game.user.isGM) return;
+  if (tokenDocument.actor?.type !== "pawn") return;
+  if (!("x" in changed || "y" in changed || "rotation" in changed || "lockRotation" in changed)) return;
+
+  const { file, rank } = pixelToSquare(tokenDocument.x, tokenDocument.y);
+  const updates = {};
+
+  if (tokenDocument.actor.system.file !== file) updates["system.file"] = file;
+  if (tokenDocument.actor.system.rank !== rank) updates["system.rank"] = rank;
+
+  if (Object.keys(updates).length) {
+    await tokenDocument.actor.update(updates);
+  }
 }
 
 function findBoardScene() {
@@ -98,27 +120,47 @@ function findBoardScene() {
 
 async function ensureBoardScene() {
   const existing = findBoardScene();
-  if (existing) return existing;
-
   const size = BOARD_SIZE * GRID_SIZE;
   const gridType = CONST.GRID_TYPES?.SQUARE ?? 1;
+  const sceneUpdates = {
+    width: size,
+    height: size,
+    padding: 0,
+    backgroundColor: "#9b9b9b",
+    tokenVision: false,
+    "grid.type": gridType,
+    "grid.size": GRID_SIZE,
+    "grid.distance": 1,
+    "grid.units": "sq",
+    "grid.color": "#333333",
+    "grid.alpha": 0.45
+  };
+
+  if (existing) {
+    const updates = {};
+    for (const [path, value] of Object.entries(sceneUpdates)) {
+      if (foundry.utils.getProperty(existing, path) !== value) updates[path] = value;
+    }
+    if (Object.keys(updates).length) await existing.update(updates);
+    return existing;
+  }
 
   return Scene.create({
     name: BOARD_SCENE_NAME,
     active: true,
     navigation: true,
-    width: size,
-    height: size,
-    padding: 0,
-    backgroundColor: "#1d2733",
-    tokenVision: false,
+    width: sceneUpdates.width,
+    height: sceneUpdates.height,
+    padding: sceneUpdates.padding,
+    backgroundColor: sceneUpdates.backgroundColor,
+    tokenVision: sceneUpdates.tokenVision,
     grid: {
-      type: gridType,
-      size: GRID_SIZE,
-      distance: 1,
-      units: "sq",
-      color: "#111111",
-      alpha: 0.28
+      type: sceneUpdates["grid.type"],
+      size: sceneUpdates["grid.size"],
+      distance: sceneUpdates["grid.distance"],
+      units: sceneUpdates["grid.units"],
+      color: sceneUpdates["grid.color"],
+      alpha: sceneUpdates["grid.alpha"]
     },
     initial: {
       x: size / 2,
@@ -133,30 +175,11 @@ async function ensureBoardScene() {
   });
 }
 
-async function ensureBoardTile(scene) {
-  const existing = scene.tiles.find(tile => tile.getFlag(SYSTEM_ID, "kind") === "board-image");
-  if (existing) return existing;
-
-  const size = BOARD_SIZE * GRID_SIZE;
-  const [tile] = await scene.createEmbeddedDocuments("Tile", [{
-    name: "Pawn16 Board Image",
-    x: 0,
-    y: 0,
-    width: size,
-    height: size,
-    locked: true,
-    sort: 0,
-    texture: {
-      src: BOARD_ASSET
-    },
-    flags: {
-      [SYSTEM_ID]: {
-        kind: "board-image"
-      }
-    }
-  }]);
-
-  return tile;
+async function removeBoardTiles(scene) {
+  const boardTiles = scene.tiles.filter(tile => tile.getFlag(SYSTEM_ID, "kind") === "board-image");
+  if (boardTiles.length) {
+    await scene.deleteEmbeddedDocuments("Tile", boardTiles.map(tile => tile.id));
+  }
 }
 
 async function ensurePawnActors({ reset = false } = {}) {
@@ -187,6 +210,8 @@ async function ensurePawnActors({ reset = false } = {}) {
           width: 1,
           height: 1,
           texture: { src: img },
+          rotation: 0,
+          lockRotation: true,
           disposition
         },
         flags: {
@@ -201,6 +226,16 @@ async function ensurePawnActors({ reset = false } = {}) {
       let actor = game.actors.find(candidate => candidate.getFlag(SYSTEM_ID, "seedId") === seedId);
       if (!actor) actor = await Actor.create(data);
       else if (reset) await actor.update(data);
+      else await actor.update({
+        img,
+        "prototypeToken.texture.src": img,
+        "prototypeToken.rotation": 0,
+        "prototypeToken.lockRotation": true,
+        "prototypeToken.width": 1,
+        "prototypeToken.height": 1,
+        "prototypeToken.actorLink": true,
+        "prototypeToken.disposition": disposition
+      });
       actors.push(actor);
     }
   }
@@ -214,7 +249,17 @@ async function ensurePawnTokens(scene, actors) {
   for (const actor of actors) {
     const seedId = actor.getFlag(SYSTEM_ID, "seedId");
     const existing = scene.tokens.find(token => token.getFlag(SYSTEM_ID, "seedId") === seedId);
-    if (existing) continue;
+    if (existing) {
+      const updates = {};
+      if (existing.rotation !== 0) updates.rotation = 0;
+      if (existing.lockRotation !== true) updates.lockRotation = true;
+      if (existing.width !== 1) updates.width = 1;
+      if (existing.height !== 1) updates.height = 1;
+      if (existing.actorLink !== true) updates.actorLink = true;
+      if (existing.texture?.src !== actor.img) updates["texture.src"] = actor.img;
+      if (Object.keys(updates).length) await existing.update(updates);
+      continue;
+    }
 
     const position = squareToPixel(actor.system.file, actor.system.rank);
     const document = await actor.getTokenDocument({
@@ -223,6 +268,8 @@ async function ensurePawnTokens(scene, actors) {
       height: 1,
       actorLink: true,
       texture: { src: actor.img },
+      rotation: 0,
+      lockRotation: true,
       flags: {
         [SYSTEM_ID]: {
           seedId
@@ -292,4 +339,10 @@ function pawnSeedId(side, file) {
 
 function capitalize(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function unpauseGame() {
+  if (game.user.isGM && game.paused) {
+    game.togglePause(false, { broadcast: true, userId: game.user.id });
+  }
 }

@@ -8,5 +8,6 @@ When a GM opens a world using this system, it seeds:
 - 16 white pawns
 - 16 black pawns
 - Helper macros for moving a selected pawn forward and resetting the board
+- An unpaused game state so players can move tokens immediately
 
 The seed script is idempotent: it creates missing pieces without committing generated world data.

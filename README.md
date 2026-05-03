@@ -82,7 +82,7 @@ To try it:
 
 4. Launch the world as GM.
 
-When the world opens, the system seeds a 16x16 `Pawn16 Board` scene, 16 white pawns, 16 black pawns, and two helper macros. Select one pawn and use the `Pawn16: Move Selected Pawn Forward` token control or macro to make a legal forward pawn move.
+When the world opens, the system seeds a native 16x16 Foundry grid scene named `Pawn16 Board`, 16 white pawns, 16 black pawns, and two helper macros. Select one pawn and use the `Pawn16: Move Selected Pawn Forward` token control or macro to make a legal forward pawn move.
 
 The generated world data remains local under `foundry-data/` and is ignored by Git.
 

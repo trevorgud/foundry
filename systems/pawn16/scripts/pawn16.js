@@ -1,6 +1,6 @@
 import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
-import { moveSelectedPawnForward, resetPawn16Board, seedPawn16World } from "./seed.js";
+import { moveSelectedPawnForward, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
 
 Hooks.once("init", () => {
   console.info("Pawn16 | Initializing");
@@ -56,4 +56,21 @@ Hooks.on("getSceneControlButtons", controls => {
     visible: game.user.isGM,
     onChange: () => resetPawn16Board()
   };
+});
+
+Hooks.on("preUpdateToken", (_tokenDocument, changed) => {
+  if (game.system.id !== SYSTEM_ID) return;
+
+  if ("rotation" in changed && changed.rotation !== 0) changed.rotation = 0;
+  if ("lockRotation" in changed && changed.lockRotation !== true) changed.lockRotation = true;
+
+  if ("x" in changed || "y" in changed) {
+    changed.rotation = 0;
+    changed.lockRotation = true;
+  }
+});
+
+Hooks.on("updateToken", (tokenDocument, changed) => {
+  if (game.system.id !== SYSTEM_ID) return;
+  syncPawnStateFromToken(tokenDocument, changed);
 });
