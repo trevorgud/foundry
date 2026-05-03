@@ -116,6 +116,8 @@ The smoke test launches the `pawn16-test` world, logs in as `Gamemaster`, resets
 
 The main feedback artifact is JSON at `test-results/pawn16-state.json`. Screenshots are saved locally for debugging and are ignored by Git.
 
+More implementation notes for Foundry v14 and Playwright are in `docs/foundry-v14-playwright-notes.md`.
+
 ## Notes
 
 - The compose file pins `ghcr.io/felddy/foundryvtt:14.360.0`, so the zip should be named `foundryvtt-14.360.zip`.
