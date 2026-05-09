@@ -1,6 +1,7 @@
 import { SYSTEM_ID, squareToPixel } from "./rules.js";
 import { positionFromScene, pieceFromToken } from "./movement-adapters.js";
 import { generateLegalAttacks, generateLegalMoves, getMovementProfile } from "./movement-engine.js";
+import { getStateFlag, setStateFlag } from "./game-state.js";
 
 const TURN_STATE_FLAG = "turnState";
 const ACTION_LOG_FLAG = "actionLog";
@@ -15,18 +16,18 @@ export function initialTurnState() {
   };
 }
 
-export function getTurnState(scene) {
-  return scene?.getFlag(SYSTEM_ID, TURN_STATE_FLAG) ?? initialTurnState();
+export function getTurnState(_scene) {
+  return getStateFlag(TURN_STATE_FLAG, initialTurnState());
 }
 
-export async function ensureTurnState(scene, { reset = false } = {}) {
-  if (reset || !scene.getFlag(SYSTEM_ID, TURN_STATE_FLAG)) {
-    await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, initialTurnState());
+export async function ensureTurnState(_scene, { reset = false } = {}) {
+  if (reset || !getStateFlag(TURN_STATE_FLAG)) {
+    await setStateFlag(TURN_STATE_FLAG, initialTurnState());
   }
 }
 
-export async function endTurn(scene) {
-  const state = getTurnState(scene);
+export async function endTurn(_scene) {
+  const state = getTurnState();
   const nextSide = state.currentSide === "white" ? "black" : "white";
   const nextTurn = state.currentSide === "black" ? state.turnNumber + 1 : state.turnNumber;
   const nextState = {
@@ -35,16 +36,16 @@ export async function endTurn(scene) {
     movementUsed: false,
     attackUsed: false
   };
-  await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, nextState);
+  await setStateFlag(TURN_STATE_FLAG, nextState);
   return nextState;
 }
 
-export function getActionLog(scene) {
-  return scene?.getFlag(SYSTEM_ID, ACTION_LOG_FLAG) ?? [];
+export function getActionLog(_scene) {
+  return getStateFlag(ACTION_LOG_FLAG, []);
 }
 
-export async function clearActionLog(scene) {
-  await scene.setFlag(SYSTEM_ID, ACTION_LOG_FLAG, []);
+export async function clearActionLog(_scene) {
+  await setStateFlag(ACTION_LOG_FLAG, []);
 }
 
 export function legalActionsForToken(tokenDocument, actionType) {
@@ -63,7 +64,7 @@ export function legalActionsForToken(tokenDocument, actionType) {
 }
 
 export async function executeMove(scene, tokenDocument, targetFile, targetRank) {
-  const turnState = getTurnState(scene);
+  const turnState = getTurnState();
   assertCanUseAction(tokenDocument.actor.system.side, "move", turnState);
 
   const action = legalActionsForToken(tokenDocument, "move")
@@ -72,7 +73,7 @@ export async function executeMove(scene, tokenDocument, targetFile, targetRank) 
 
   const effects = moveEffects(tokenDocument, action);
   await applyEffects(scene, effects);
-  const nextTurnState = await markActionUsed(scene, "move");
+  const nextTurnState = await markActionUsed("move");
   const result = createActionResult({
     action,
     actionType: "move",
@@ -82,12 +83,12 @@ export async function executeMove(scene, tokenDocument, targetFile, targetRank) 
     turnBefore: turnState,
     turnAfter: nextTurnState
   });
-  await appendActionLog(scene, result);
+  await appendActionLog(result);
   return result;
 }
 
 export async function executeAttack(scene, tokenDocument, targetFile, targetRank) {
-  const turnState = getTurnState(scene);
+  const turnState = getTurnState();
   assertCanUseAction(tokenDocument.actor.system.side, "attack", turnState);
 
   const action = legalActionsForToken(tokenDocument, "attack")
@@ -99,7 +100,7 @@ export async function executeAttack(scene, tokenDocument, targetFile, targetRank
 
   const effects = attackEffects(action);
   await applyEffects(scene, effects);
-  const nextTurnState = await markActionUsed(scene, "attack");
+  const nextTurnState = await markActionUsed("attack");
   const result = createActionResult({
     action,
     actionType: "attack",
@@ -109,7 +110,7 @@ export async function executeAttack(scene, tokenDocument, targetFile, targetRank
     turnBefore: turnState,
     turnAfter: nextTurnState
   });
-  await appendActionLog(scene, result);
+  await appendActionLog(result);
   return result;
 }
 
@@ -174,14 +175,14 @@ async function applyEffects(scene, effects) {
   }
 }
 
-async function markActionUsed(scene, actionType) {
-  const state = getTurnState(scene);
+async function markActionUsed(actionType) {
+  const state = getTurnState();
   const nextState = {
     ...state,
     movementUsed: state.movementUsed || actionType === "move",
     attackUsed: state.attackUsed || actionType === "attack"
   };
-  await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, nextState);
+  await setStateFlag(TURN_STATE_FLAG, nextState);
   return nextState;
 }
 
@@ -217,9 +218,9 @@ function pieceSnapshot(tokenDocument) {
   };
 }
 
-async function appendActionLog(scene, result) {
-  const nextLog = [...getActionLog(scene), result].slice(-MAX_ACTION_LOG_ENTRIES);
-  await scene.setFlag(SYSTEM_ID, ACTION_LOG_FLAG, nextLog);
+async function appendActionLog(result) {
+  const nextLog = [...getActionLog(), result].slice(-MAX_ACTION_LOG_ENTRIES);
+  await setStateFlag(ACTION_LOG_FLAG, nextLog);
 }
 
 function actionResultId() {

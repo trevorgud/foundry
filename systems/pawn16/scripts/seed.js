@@ -18,6 +18,8 @@ import {
   getTurnState as getBoardTurnState,
   legalActionsForToken
 } from "./action-execution.js";
+import { assertUserCanActForSide, buildPlayerOwnership } from "./sides.js";
+import { GAME_STATE_ACTOR_NAME, GAME_STATE_KIND, findGameStateActor } from "./game-state.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
 const WHITE_PAWN_ASSET = "systems/pawn16/assets/white-pawn.svg";
@@ -44,6 +46,8 @@ export async function seedPawn16World() {
 
 async function seedPawn16WorldUnlocked() {
   const scene = await ensureBoardScene();
+  await ensurePlayerUsers();
+  await ensureGameStateActor();
   const actors = await ensurePieceActors();
   await removeBoardTiles(scene);
   await ensurePieceTokens(scene, actors);
@@ -74,6 +78,8 @@ export async function resetPawn16Board() {
     await scene.deleteEmbeddedDocuments("Token", seededTokens.map(token => token.id));
   }
 
+  await ensurePlayerUsers();
+  await ensureGameStateActor();
   const actors = await ensurePieceActors({ reset: true });
   await removeBoardTiles(scene);
   await ensurePieceTokens(scene, actors);
@@ -164,9 +170,9 @@ export function getTurnState(scene = findBoardScene()) {
 }
 
 export async function endTurn() {
-  if (!game.user.isGM) throw new Error("Only a GM can end Pawn16 turns.");
-  const scene = findBoardScene();
-  return endBoardTurn(scene);
+  const { currentSide } = getTurnState();
+  assertUserCanActForSide(currentSide);
+  return endBoardTurn(findBoardScene());
 }
 
 export function actionLog(scene = findBoardScene()) {
@@ -174,14 +180,11 @@ export function actionLog(scene = findBoardScene()) {
 }
 
 export async function clearBoardActionLog() {
-  if (!game.user.isGM) throw new Error("Only a GM can clear the Pawn16 action log.");
-  const scene = findBoardScene();
-  await clearActionLog(scene);
-  return getActionLog(scene);
+  await clearActionLog();
+  return getActionLog();
 }
 
 export async function syncPawnStateFromToken(tokenDocument, changed = {}) {
-  if (!game.user.isGM) return;
   if (!tokenDocument.getFlag(SYSTEM_ID, "seedId")) return;
   if (!("x" in changed || "y" in changed || "rotation" in changed || "lockRotation" in changed)) return;
 
@@ -199,6 +202,59 @@ export async function syncPawnStateFromToken(tokenDocument, changed = {}) {
 function findBoardScene() {
   return game.scenes.find(scene => scene.getFlag(SYSTEM_ID, "kind") === "board")
     ?? game.scenes.getName(BOARD_SCENE_NAME);
+}
+
+async function ensureGameStateActor() {
+  const ownership = buildPlayerOwnership();
+  const existing = findGameStateActor();
+  if (existing) {
+    if (!sameOwnership(existing.ownership, ownership)) {
+      await existing.update({ ownership });
+    }
+    return existing;
+  }
+
+  return Actor.create({
+    name: GAME_STATE_ACTOR_NAME,
+    type: "pawn",
+    img: "icons/svg/clockwork.svg",
+    ownership,
+    flags: {
+      [SYSTEM_ID]: {
+        kind: GAME_STATE_KIND
+      }
+    }
+  });
+}
+
+async function ensurePlayerUsers() {
+  const configs = [
+    { settingKey: "whitePlayerId", name: "WhitePlayer" },
+    { settingKey: "blackPlayerId", name: "BlackPlayer" }
+  ];
+
+  for (const { settingKey, name } of configs) {
+    const currentId = game.settings.get(SYSTEM_ID, settingKey);
+    if (currentId && game.users.get(currentId)) continue;
+
+    let user = game.users.find(u => u.name === name);
+    if (!user) {
+      user = await User.create({ name, role: CONST.USER_ROLES.PLAYER, password: "" });
+    }
+    if (user && user.id !== currentId) {
+      await game.settings.set(SYSTEM_ID, settingKey, user.id);
+    }
+  }
+}
+
+function sameOwnership(current = {}, desired = {}) {
+  const currentKeys = Object.keys(current).sort();
+  const desiredKeys = Object.keys(desired).sort();
+  if (currentKeys.length !== desiredKeys.length) return false;
+  for (const key of desiredKeys) {
+    if (current[key] !== desired[key]) return false;
+  }
+  return true;
 }
 
 async function ensureBoardScene() {
@@ -277,10 +333,12 @@ async function ensurePieceActors({ reset = false } = {}) {
         const disposition = side === "white"
           ? CONST.TOKEN_DISPOSITIONS.FRIENDLY
           : CONST.TOKEN_DISPOSITIONS.HOSTILE;
+        const ownership = buildPlayerOwnership();
         const data = {
           name,
           type: slot.type,
           img,
+          ownership,
           system: {
             side,
             file: slot.file,
@@ -313,6 +371,7 @@ async function ensurePieceActors({ reset = false } = {}) {
         else if (reset) await actor.update(data);
         else await actor.update({
           img,
+          ownership,
           "prototypeToken.texture.src": img,
           "prototypeToken.rotation": 0,
           "prototypeToken.lockRotation": true,
@@ -399,11 +458,13 @@ async function ensureMacros() {
 }
 
 async function ensureMacro(name, command, img) {
+  const desiredOwnership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const existing = game.macros.getName(name);
   if (existing) {
     const updates = {};
     if (existing.command !== command) updates.command = command;
     if (existing.img !== img) updates.img = img;
+    if ((existing.ownership?.default ?? -1) !== desiredOwnership.default) updates.ownership = desiredOwnership;
     return Object.keys(updates).length ? existing.update(updates) : existing;
   }
 
@@ -412,10 +473,7 @@ async function ensureMacro(name, command, img) {
     type: "script",
     img,
     command,
-    ownership: {
-      default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
-      [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
-    },
+    ownership: desiredOwnership,
     flags: {
       [SYSTEM_ID]: {
         seeded: true

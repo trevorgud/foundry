@@ -20,6 +20,24 @@ Hooks.once("init", () => {
     type: Boolean,
     default: true
   });
+
+  game.settings.register(SYSTEM_ID, "whitePlayerId", {
+    name: "PAWN16.Settings.WhitePlayerId.Name",
+    hint: "PAWN16.Settings.WhitePlayerId.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: ""
+  });
+
+  game.settings.register(SYSTEM_ID, "blackPlayerId", {
+    name: "PAWN16.Settings.BlackPlayerId.Name",
+    hint: "PAWN16.Settings.BlackPlayerId.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: ""
+  });
 });
 
 Hooks.once("ready", async () => {
@@ -83,7 +101,6 @@ Hooks.on("getSceneControlButtons", controls => {
     icon: "fa-solid fa-hourglass-half",
     order: order + 2,
     button: true,
-    visible: game.user.isGM,
     onChange: () => endTurn()
   };
 
