@@ -4,8 +4,8 @@
 
 #pawn16-hud {
   position: fixed;
-  top: 8px;
-  right: 320px;
+  top: 60px;
+  right: 10px;
   z-index: 60;
   pointer-events: none;
 }
@@ -38,6 +38,21 @@
 
 .pawn16-side-white { color: #f0f0f0; }
 .pawn16-side-black { color: #aaaaff; }
+
+.pawn16-my-turn {
+  border: 1px solid #44bb44;
+  box-shadow: 0 0 6px rgba(68, 187, 68, 0.4);
+}
+
+.pawn16-hud-identity {
+  font-size: 10px;
+  color: #888;
+  border-top: 1px solid #444;
+  padding-top: 3px;
+  margin-top: 2px;
+  width: 100%;
+  text-align: right;
+}
 
 .pawn16-hud-actions {
   font-size: 11px;

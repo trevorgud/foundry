@@ -26,7 +26,7 @@ export async function ensureTurnState(_scene, { reset = false } = {}) {
   }
 }
 
-export async function endTurn(_scene) {
+export async function endTurn(_scene, { skipAutoEnd = false } = {}) {
   const state = getTurnState();
   const nextSide = state.currentSide === "white" ? "black" : "white";
   const nextTurn = state.currentSide === "black" ? state.turnNumber + 1 : state.turnNumber;
@@ -38,6 +38,7 @@ export async function endTurn(_scene) {
   };
   await setStateFlag(TURN_STATE_FLAG, nextState);
   postTurnMessage(nextState);
+  if (!skipAutoEnd) await maybeAutoEndTurn(_scene, { skipAutoEnd: true });
   return nextState;
 }
 
@@ -246,13 +247,13 @@ function sideHasLegalAction(scene, side, actionType) {
   return false;
 }
 
-async function maybeAutoEndTurn(scene) {
+async function maybeAutoEndTurn(scene, { skipAutoEnd = false } = {}) {
   if (!game.settings.get(SYSTEM_ID, "autoEndTurn")) return;
   const state = getTurnState();
   if (state.gameOver) return;
   const moveBlocked = state.movementUsed || !sideHasLegalAction(scene, state.currentSide, "move");
   const attackBlocked = state.attackUsed || !sideHasLegalAction(scene, state.currentSide, "attack");
-  if (moveBlocked && attackBlocked) await endTurn();
+  if (moveBlocked && attackBlocked) await endTurn(scene, { skipAutoEnd });
 }
 
 async function checkGameOver(capturedPieceId) {
@@ -262,15 +263,13 @@ async function checkGameOver(capturedPieceId) {
   const gameOverState = { ...state, gameOver: { winner, turn: state.turnNumber } };
   await setStateFlag(TURN_STATE_FLAG, gameOverState);
   ChatMessage.create({
-    content: `<strong>Game over — ${capitalize(winner)} wins!</strong> (${capitalize(winner === "white" ? "black" : "white")} king captured on turn ${state.turnNumber}.)`,
-    type: CONST.CHAT_MESSAGE_STYLES?.OTHER ?? 0
+    content: `<strong>Game over — ${capitalize(winner)} wins!</strong> (${capitalize(winner === "white" ? "black" : "white")} king captured on turn ${state.turnNumber}.)`
   });
 }
 
 function postTurnMessage(state) {
   ChatMessage.create({
-    content: `Turn ${state.turnNumber} — <strong>${capitalize(state.currentSide)}</strong> to move.`,
-    type: CONST.CHAT_MESSAGE_STYLES?.OTHER ?? 0
+    content: `Turn ${state.turnNumber} — <strong>${capitalize(state.currentSide)}</strong> to move.`
   });
 }
 

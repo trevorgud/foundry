@@ -155,6 +155,7 @@ test.describe("Pawn16 piece rules", () => {
       const beforeEnd = game.pawn16.turnState();
       const actionLog = game.pawn16.actionLog();
       const afterEnd = await game.pawn16.endTurn();
+      await game.pawn16.setAutoEndTurn(true);
       return { moveResult, attackResult, secondMoveError, secondAttackError, beforeEnd, afterEnd, actionLog };
     });
 

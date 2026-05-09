@@ -160,3 +160,7 @@ Hooks.on("updateToken", (tokenDocument, changed) => {
   if (game.system.id !== SYSTEM_ID) return;
   syncPawnStateFromToken(tokenDocument, changed);
 });
+
+Hooks.on("pauseGame", paused => {
+  if (paused && game.user?.isGM) game.togglePause(false, { broadcast: true });
+});

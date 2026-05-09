@@ -63,7 +63,10 @@ export async function resetPawn16Board() {
   if (seedPromise) await seedPromise;
 
   if (!game.user.isGM) {
-    ui.notifications.warn("Only a GM can reset the Pawn16 board.");
+    const scene = findBoardScene();
+    await ensureTurnState(scene, { reset: true });
+    await clearActionLog(scene);
+    ui.notifications.info("Game state reset — Turn 1, White to move. Ask GM to reset piece positions.");
     return;
   }
 
@@ -85,6 +88,7 @@ export async function resetPawn16Board() {
   await ensurePieceTokens(scene, actors);
   await ensureTurnState(scene, { reset: true });
   await clearActionLog(scene);
+  await game.settings.set(SYSTEM_ID, "autoEndTurn", true);
   unpauseGame();
   if (!scene.active) await scene.activate();
   ui.notifications.info("Pawn16 board reset.");
