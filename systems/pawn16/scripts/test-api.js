@@ -1,4 +1,14 @@
-import { BOARD_SIZE, GRID_SIZE, SYSTEM_ID, pixelToSquare, startingRank } from "./rules.js";
+import {
+  BOARD_SIZE,
+  GRID_SIZE,
+  SYSTEM_ID,
+  isOnBoard,
+  legalPawnMoves,
+  pixelToSquare,
+  squareKey,
+  squareToPixel,
+  startingRank
+} from "./rules.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
 
@@ -90,6 +100,67 @@ export function unpause() {
   }
 }
 
+export function legalMovesForPawn(side, file) {
+  const scene = getBoardScene();
+  const token = findPawnToken(scene, side, file);
+  if (!token) return [];
+
+  const occupied = getOccupiedSquares(scene, token.id);
+  return legalPawnMoves({
+    side: token.actor.system.side,
+    file: token.actor.system.file,
+    rank: token.actor.system.rank,
+    hasMoved: token.actor.system.hasMoved
+  }, occupied);
+}
+
+export async function setPawnPosition(side, file, targetFile, targetRank, { hasMoved } = {}) {
+  if (!game.user.isGM) throw new Error("Only a GM can set Pawn16 positions.");
+  if (!isOnBoard(targetFile, targetRank)) throw new Error(`Target square ${targetFile},${targetRank} is off-board.`);
+
+  const scene = getBoardScene();
+  const token = findPawnToken(scene, side, file);
+  if (!token) throw new Error(`Pawn ${side}-${file} was not found on the board.`);
+
+  const position = squareToPixel(targetFile, targetRank);
+  await token.update({
+    ...position,
+    rotation: 0,
+    lockRotation: true
+  }, { animate: false });
+
+  const updates = {
+    "system.file": targetFile,
+    "system.rank": targetRank
+  };
+  if (typeof hasMoved === "boolean") updates["system.hasMoved"] = hasMoved;
+  await token.actor.update(updates);
+
+  return {
+    side,
+    file,
+    targetFile,
+    targetRank
+  };
+}
+
+export async function clearSquare(file, rank) {
+  if (!game.user.isGM) throw new Error("Only a GM can clear Pawn16 squares.");
+  if (!isOnBoard(file, rank)) throw new Error(`Square ${file},${rank} is off-board.`);
+
+  const scene = getBoardScene();
+  if (!scene) return 0;
+
+  const tokens = scene.tokens.filter(token => {
+    if (token.actor?.type !== "pawn") return false;
+    return token.actor.system.file === file && token.actor.system.rank === rank;
+  });
+
+  if (!tokens.length) return 0;
+  await scene.deleteEmbeddedDocuments("Token", tokens.map(token => token.id));
+  return tokens.length;
+}
+
 function summarizeSide(tokens, side) {
   const sideTokens = tokens.filter(token => token.actor?.system?.side === side);
   const expectedRank = startingRank(side);
@@ -108,4 +179,32 @@ function summarizeSide(tokens, side) {
     ranks,
     unexpectedRanks: Array.from(unexpectedRanks).sort((a, b) => a - b)
   };
+}
+
+function getBoardScene() {
+  return game.scenes.getName(BOARD_SCENE_NAME) ?? canvas.scene ?? null;
+}
+
+function findPawnToken(scene, side, file) {
+  if (!scene) return null;
+  const seedId = `${side}-${file}`;
+  return scene.tokens.find(token => token.getFlag(SYSTEM_ID, "seedId") === seedId) ?? null;
+}
+
+function getOccupiedSquares(scene, excludeTokenId = null) {
+  const occupied = new Map();
+  if (!scene) return occupied;
+
+  for (const token of scene.tokens) {
+    if (token.id === excludeTokenId) continue;
+    if (token.actor?.type !== "pawn") continue;
+
+    const { file, rank } = token.actor.system;
+    occupied.set(squareKey(file, rank), {
+      side: token.actor.system.side,
+      tokenId: token.id
+    });
+  }
+
+  return occupied;
 }
