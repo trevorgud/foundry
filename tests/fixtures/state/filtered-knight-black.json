@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "1.0.0",
+  "ok": true,
+  "generatedAt": "2026-05-09T18:55:44.623Z",
+  "options": {
+    "reset": true,
+    "seededOnly": true,
+    "side": "black",
+    "pieceType": "knight",
+    "movedOnly": false,
+    "fileMin": null,
+    "fileMax": null,
+    "rankMin": null,
+    "rankMax": null,
+    "text": false,
+    "verifyUi": false,
+    "strict": true
+  },
+  "health": {
+    "ok": true,
+    "issues": [],
+    "state": {
+      "system": "pawn16",
+      "world": "pawn16-test",
+      "user": {
+        "name": "Gamemaster",
+        "isGM": true
+      },
+      "ready": true,
+      "paused": false,
+      "activeScene": "Pawn16 Board",
+      "scene": {
+        "name": "Pawn16 Board",
+        "active": true,
+        "width": 1280,
+        "height": 1280,
+        "backgroundColor": "#999999",
+        "gridType": 1,
+        "gridSize": 80,
+        "gridDistance": 1,
+        "gridUnits": "sq",
+        "tiles": 0,
+        "boardImageTiles": 0,
+        "tokens": 64,
+        "pieceTokens": 64,
+        "pawnTokens": 32,
+        "knightTokens": 32
+      },
+      "pieces": {
+        "pawns": {
+          "white": {
+            "count": 16,
+            "expectedRank": 14,
+            "ranks": {
+              "14": 16
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 16,
+            "expectedRank": 1,
+            "ranks": {
+              "1": 16
+            },
+            "unexpectedRanks": []
+          },
+          "count": 32
+        },
+        "knights": {
+          "white": {
+            "count": 16,
+            "expectedRank": 15,
+            "ranks": {
+              "15": 16
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 16,
+            "expectedRank": 0,
+            "ranks": {
+              "0": 16
+            },
+            "unexpectedRanks": []
+          },
+          "count": 32
+        },
+        "rotated": 0,
+        "unlockedRotation": 0,
+        "unlinked": 0
+      }
+    }
+  },
+  "scene": {
+    "name": "Pawn16 Board",
+    "width": 1280,
+    "height": 1280,
+    "gridSize": 80,
+    "boardSize": 16,
+    "tokenCount": 64
+  },
+  "diagnostics": {
+    "seed": {
+      "expectedSeedCount": 64,
+      "seededTokenCount": 64,
+      "seededCounts": {
+        "byPieceType": {
+          "pawn": 32,
+          "knight": 32
+        },
+        "bySide": {
+          "white": 32,
+          "black": 32
+        }
+      },
+      "duplicateSeedIds": [],
+      "missingSeedIds": [],
+      "unseededPieceTokens": []
+    },
+    "filteredCount": 16
+  },
+  "tokens": [
+    {
+      "id": "Kp2DpckLmwhtVczc",
+      "name": "Black Knight 1",
+      "seedId": "knight-black-0",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 0,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 0,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "wKmuMu7BgCQuVdtB",
+      "name": "Black Knight 2",
+      "seedId": "knight-black-1",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 1,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 80,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "yl5jOxOiqoWyUOpp",
+      "name": "Black Knight 3",
+      "seedId": "knight-black-2",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 2,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 160,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "b8tqq4pZlS3kdmie",
+      "name": "Black Knight 4",
+      "seedId": "knight-black-3",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 3,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 240,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "7PfdvoRtVWoDTbiN",
+      "name": "Black Knight 5",
+      "seedId": "knight-black-4",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 4,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 320,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "QlrKCc2tWt8RzI4H",
+      "name": "Black Knight 6",
+      "seedId": "knight-black-5",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 5,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 400,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "MR2aWqtGfYtg4RVb",
+      "name": "Black Knight 7",
+      "seedId": "knight-black-6",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 6,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 480,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "mevrWp1VcYIlxO8w",
+      "name": "Black Knight 8",
+      "seedId": "knight-black-7",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 7,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 560,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "c9qrr34BrhmUqgKU",
+      "name": "Black Knight 9",
+      "seedId": "knight-black-8",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 8,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 640,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "WAQSQOs0iG23L8hu",
+      "name": "Black Knight 10",
+      "seedId": "knight-black-9",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 9,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 720,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "SJKXDSBAaLWDDE4E",
+      "name": "Black Knight 11",
+      "seedId": "knight-black-10",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 10,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 800,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "OQFW7VpKxmQiqDGj",
+      "name": "Black Knight 12",
+      "seedId": "knight-black-11",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 11,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 880,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "yQxHhPdcbmTyiR5w",
+      "name": "Black Knight 13",
+      "seedId": "knight-black-12",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 12,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 960,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "nCZ9kl1OYL1gjov9",
+      "name": "Black Knight 14",
+      "seedId": "knight-black-13",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 13,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 1040,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "vDrXFEqVWsx77i6g",
+      "name": "Black Knight 15",
+      "seedId": "knight-black-14",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 14,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 1120,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "U3catsaENIS9Hx1H",
+      "name": "Black Knight 16",
+      "seedId": "knight-black-15",
+      "pieceType": "knight",
+      "side": "black",
+      "file": 15,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 1200,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    }
+  ],
+  "boardText": null,
+  "uiVerify": {
+    "enabled": false,
+    "ok": true,
+    "issues": []
+  }
+}

@@ -134,11 +134,14 @@ make dev-restart    # dev overlay recreate
 make dev-logs       # dev overlay logs
 make test-all       # engine + full Foundry suite
 make test-engine    # pure movement engine unit tests
+make test-state-schema # fast fixture-based schema contract check
+make test-state-schema-live # live state output schema check
 make test-foundry-health # health-only Foundry smoke subset
 make test-foundry-rules  # rules-only Foundry smoke subset
 make test-foundry   # full Foundry Playwright suite
 make state          # structured state artifact
 make state-debug    # structured state artifact with filters/text/UI verify
+make state-fixtures # refresh schema fixtures under tests/fixtures/state
 make screenshot     # browser screenshot artifact
 make dev-shell      # shell inside the Playwright test container
 ```
@@ -151,6 +154,12 @@ STATE_PIECE_TYPE=pawn STATE_SIDE=white make state-debug
 STATE_TEXT=1 STATE_RANK_MIN=8 make state-debug
 STATE_VERIFY_UI=1 make state-debug
 ```
+
+Schema contract:
+
+- `docs/schemas/pawn16-state.schema.json` defines the state payload contract.
+- `make test-state-schema` validates committed fixtures quickly.
+- `make test-state-schema-live` validates a freshly captured live state payload.
 
 ## Before Handing Back
 

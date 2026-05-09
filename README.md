@@ -109,11 +109,14 @@ make dev-up      # Foundry with dev/test overlay
 make dev-restart # recreate Foundry with pawn16-test auto-launched
 make test-all    # engine + full Foundry suite
 make test-engine # pure movement engine unit tests
+make test-state-schema # fast fixture-based schema contract check
+make test-state-schema-live # live state output schema check against running Foundry
 make test-foundry-health # health-only Foundry smoke subset
 make test-foundry-rules  # rules-only Foundry smoke subset
 make test-foundry # full Foundry Playwright suite
 make state       # writes and prints test-results/pawn16-state.json
 make state-debug # extended JSON state with optional filters/text/UI verify
+make state-fixtures # refresh schema fixtures under tests/fixtures/state
 make screenshot  # writes test-results/pawn16-board.png
 make logs        # follows Foundry logs
 ```
@@ -143,6 +146,13 @@ STATE_PIECE_TYPE=knight STATE_SIDE=black make state-debug
 STATE_TEXT=1 STATE_FILE_MIN=0 STATE_FILE_MAX=7 make state-debug
 STATE_VERIFY_UI=1 make state-debug
 ```
+
+Schema contract:
+
+- Schema file: `docs/schemas/pawn16-state.schema.json`
+- Output includes `schemaVersion`
+- Fast check: `make test-state-schema`
+- Live check: `make test-state-schema-live`
 
 More implementation notes for Foundry v14 and Playwright are in `docs/foundry-v14-playwright-notes.md`.
 

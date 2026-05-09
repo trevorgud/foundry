@@ -6,11 +6,14 @@
   "scripts": {
     "test": "playwright test",
     "test:engine": "node --test tests/movement-engine.spec.js",
+    "test:state:schema": "node --test tests/state-schema.spec.js",
+    "test:state:schema:live": "sh -lc 'FOUNDRY_STATE_OUTPUT=test-results/pawn16-state-live-schema.json node scripts/foundry-state.mjs && node scripts/validate-state-schema.mjs test-results/pawn16-state-live-schema.json'",
     "test:foundry": "playwright test tests/foundry-smoke.spec.js",
     "test:foundry:health": "playwright test tests/foundry-smoke.spec.js --grep \"Pawn16 world is healthy\"",
     "test:foundry:rules": "playwright test tests/foundry-smoke.spec.js --grep \"Pawn16 piece rules\"",
     "foundry:state": "node scripts/foundry-state.mjs",
     "foundry:state:debug": "node scripts/foundry-state.mjs",
+    "foundry:state:fixtures": "node scripts/generate-state-fixtures.mjs",
     "foundry:screenshot": "node scripts/foundry-screenshot.mjs",
     "foundry:configure-world": "node scripts/configure-foundry.mjs"
   },
@@ -18,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.59.1"
+    "@playwright/test": "^1.59.1",
+    "ajv": "^8.20.0"
   }
 }

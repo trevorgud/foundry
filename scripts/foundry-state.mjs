@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import fs from "node:fs/promises";
 
+const SCHEMA_VERSION = "1.0.0";
 const baseURL = process.env.FOUNDRY_URL ?? "http://localhost:30000";
 const output = process.env.FOUNDRY_STATE_OUTPUT ?? "test-results/pawn16-state.json";
 const options = {
@@ -112,6 +113,7 @@ try {
   const filteredTokens = applyFilters(snapshot.rawTokens, options);
   const diagnostics = seededDiagnostics(snapshot.rawTokens, snapshot.scene?.boardSize ?? 16);
   const result = {
+    schemaVersion: SCHEMA_VERSION,
     ok: snapshot.health.ok && snapshot.uiVerify.ok,
     generatedAt: new Date().toISOString(),
     options,
@@ -147,9 +149,17 @@ async function loginIfNeeded(page) {
   await page.waitForURL(/\/(?:join|game)/, { timeout: 30000 });
   if (page.url().includes("/game")) return;
 
-  await page.locator("select[name='userid']").waitFor({ timeout: 30000 });
+  const userSelect = page.locator("select[name='userid']");
+  await userSelect.waitFor({ timeout: 30000 });
+  await page.waitForFunction(() => {
+    const select = document.querySelector("select[name='userid']");
+    if (!(select instanceof HTMLSelectElement)) return false;
+    return Array.from(select.options).some(option => {
+      return option.label === "Gamemaster" && !option.disabled;
+    });
+  }, null, { timeout: 90000 });
   const joinButton = page.getByRole("button", { name: /join game session/i });
-  await page.locator("select[name='userid']").selectOption({ label: "Gamemaster" });
+  await userSelect.selectOption({ label: "Gamemaster" });
   await page.locator("input[type='password'], input[name='password']").first().fill("");
   await Promise.all([
     page.waitForURL(/\/game/, { timeout: 30000 }),

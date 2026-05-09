@@ -23,9 +23,17 @@ async function loginIfNeeded(page) {
   await page.waitForURL(/\/(?:join|game)/, { timeout: 30000 });
   if (page.url().includes("/game")) return;
 
-  await page.locator("select[name='userid']").waitFor({ timeout: 30000 });
+  const userSelect = page.locator("select[name='userid']");
+  await userSelect.waitFor({ timeout: 30000 });
+  await page.waitForFunction(() => {
+    const select = document.querySelector("select[name='userid']");
+    if (!(select instanceof HTMLSelectElement)) return false;
+    return Array.from(select.options).some(option => {
+      return option.label === "Gamemaster" && !option.disabled;
+    });
+  }, null, { timeout: 90000 });
   const joinButton = page.getByRole("button", { name: /join game session/i });
-  await page.locator("select[name='userid']").selectOption({ label: "Gamemaster" });
+  await userSelect.selectOption({ label: "Gamemaster" });
   await page.locator("input[type='password'], input[name='password']").first().fill("");
   await Promise.all([
     page.waitForURL(/\/game/, { timeout: 30000 }),

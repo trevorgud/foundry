@@ -1,0 +1,214 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.local/schemas/pawn16-state.schema.json",
+  "title": "Pawn16 State Output",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "ok",
+    "generatedAt",
+    "options",
+    "health",
+    "scene",
+    "diagnostics",
+    "tokens",
+    "boardText",
+    "uiVerify"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "options": {
+      "type": "object",
+      "required": [
+        "reset",
+        "seededOnly",
+        "side",
+        "pieceType",
+        "movedOnly",
+        "fileMin",
+        "fileMax",
+        "rankMin",
+        "rankMax",
+        "text",
+        "verifyUi",
+        "strict"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reset": { "type": "boolean" },
+        "seededOnly": { "type": "boolean" },
+        "side": { "type": ["string", "null"] },
+        "pieceType": { "type": ["string", "null"] },
+        "movedOnly": { "type": "boolean" },
+        "fileMin": { "type": ["number", "null"] },
+        "fileMax": { "type": ["number", "null"] },
+        "rankMin": { "type": ["number", "null"] },
+        "rankMax": { "type": ["number", "null"] },
+        "text": { "type": "boolean" },
+        "verifyUi": { "type": "boolean" },
+        "strict": { "type": "boolean" }
+      }
+    },
+    "health": {
+      "type": "object",
+      "required": ["ok", "issues", "state"],
+      "additionalProperties": true,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "state": { "type": "object" }
+      }
+    },
+    "scene": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["name", "width", "height", "gridSize", "boardSize", "tokenCount"],
+      "properties": {
+        "name": { "type": "string" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "gridSize": { "type": "number" },
+        "boardSize": { "type": "number" },
+        "tokenCount": { "type": "number" }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "filteredCount"],
+      "properties": {
+        "filteredCount": { "type": "number" },
+        "seed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expectedSeedCount",
+            "seededTokenCount",
+            "seededCounts",
+            "duplicateSeedIds",
+            "missingSeedIds",
+            "unseededPieceTokens"
+          ],
+          "properties": {
+            "expectedSeedCount": { "type": "number" },
+            "seededTokenCount": { "type": "number" },
+            "seededCounts": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["byPieceType", "bySide"],
+              "properties": {
+                "byPieceType": {
+                  "type": "object",
+                  "additionalProperties": { "type": "number" }
+                },
+                "bySide": {
+                  "type": "object",
+                  "additionalProperties": { "type": "number" }
+                }
+              }
+            },
+            "duplicateSeedIds": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["seedId", "count"],
+                "properties": {
+                  "seedId": { "type": "string" },
+                  "count": { "type": "number" }
+                }
+              }
+            },
+            "missingSeedIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "unseededPieceTokens": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "name", "pieceType", "side", "file", "rank"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "name": { "type": "string" },
+                  "pieceType": { "type": ["string", "null"] },
+                  "side": { "type": ["string", "null"] },
+                  "file": { "type": ["number", "null"] },
+                  "rank": { "type": ["number", "null"] }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tokens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "seedId",
+          "pieceType",
+          "side",
+          "file",
+          "rank",
+          "hasMoved",
+          "x",
+          "y",
+          "textureSrc",
+          "actorLink",
+          "lockRotation",
+          "rotation"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "seedId": { "type": ["string", "null"] },
+          "pieceType": { "type": ["string", "null"] },
+          "side": { "type": ["string", "null"] },
+          "file": { "type": ["number", "null"] },
+          "rank": { "type": ["number", "null"] },
+          "hasMoved": { "type": "boolean" },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "textureSrc": { "type": ["string", "null"] },
+          "actorLink": { "type": "boolean" },
+          "lockRotation": { "type": "boolean" },
+          "rotation": { "type": "number" }
+        }
+      }
+    },
+    "boardText": {
+      "type": ["string", "null"]
+    },
+    "uiVerify": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "ok", "issues"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "ok": { "type": "boolean" },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
