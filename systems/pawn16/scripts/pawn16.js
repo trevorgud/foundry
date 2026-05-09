@@ -1,8 +1,9 @@
 import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
 import { actionLog, attackPiece, attackSelectedPiece, clearBoardActionLog, endTurn, getTurnState, movePiece, moveSelectedPawnForward, moveSelectedPiece, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
-import { assertHealthy, clearSquare, legalAttacksForPiece, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, testState, unpause } from "./test-api.js";
+import { assertHealthy, clearSquare, legalAttacksForPiece, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, setAutoEndTurn, testState, unpause } from "./test-api.js";
 import { initHighlights } from "./highlights.js";
+import { initHUD } from "./hud.js";
 import { legalActionsForToken } from "./action-execution.js";
 import { pixelToSquare } from "./rules.js";
 
@@ -42,7 +43,17 @@ Hooks.once("init", () => {
     default: ""
   });
 
+  game.settings.register(SYSTEM_ID, "autoEndTurn", {
+    name: "PAWN16.Settings.AutoEndTurn.Name",
+    hint: "PAWN16.Settings.AutoEndTurn.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   initHighlights();
+  initHUD();
 });
 
 Hooks.once("ready", async () => {
@@ -65,6 +76,7 @@ Hooks.once("ready", async () => {
     setPawnPosition,
     setPiecePosition,
     clearSquare,
+    setAutoEndTurn,
     testState,
     unpause,
     rules: {

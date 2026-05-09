@@ -130,6 +130,7 @@ test.describe("Pawn16 piece rules", () => {
 
   test("turn allows one movement and one attack before ending", async ({ page }) => {
     const result = await page.evaluate(async () => {
+      await game.pawn16.setAutoEndTurn(false);
       await game.pawn16.clearSquare(7, 13);
       await game.pawn16.clearSquare(6, 13);
       const moveResult = await game.pawn16.movePiece("pawn", "white", 7, 7, 13);

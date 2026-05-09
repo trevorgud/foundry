@@ -124,6 +124,10 @@ export function unpause() {
   }
 }
 
+export function setAutoEndTurn(enabled) {
+  return game.settings.set(SYSTEM_ID, "autoEndTurn", enabled);
+}
+
 export function legalMovesForPawn(side, file) {
   return legalMovesForPiece("pawn", side, file);
 }

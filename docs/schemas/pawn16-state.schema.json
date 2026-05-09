@@ -81,7 +81,16 @@
         "currentSide": { "type": "string" },
         "turnNumber": { "type": "number" },
         "movementUsed": { "type": "boolean" },
-        "attackUsed": { "type": "boolean" }
+        "attackUsed": { "type": "boolean" },
+        "gameOver": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["winner", "turn"],
+          "properties": {
+            "winner": { "type": "string" },
+            "turn": { "type": "number" }
+          }
+        }
       }
     },
     "actionLog": {

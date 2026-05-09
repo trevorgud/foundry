@@ -1,3 +1,56 @@
 .pawn16-sheet .window-content {
   background: #f7f2e8;
 }
+
+#pawn16-hud {
+  position: fixed;
+  top: 8px;
+  right: 320px;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.pawn16-hud-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: sans-serif;
+  font-size: 12px;
+  color: #ddd;
+  line-height: 1.4;
+}
+
+.pawn16-hud-label {
+  font-size: 10px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pawn16-hud-side {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.pawn16-side-white { color: #f0f0f0; }
+.pawn16-side-black { color: #aaaaff; }
+
+.pawn16-hud-actions {
+  font-size: 11px;
+  color: #bbb;
+}
+
+.pawn16-gameover .pawn16-hud-winner {
+  font-weight: bold;
+  font-size: 14px;
+  color: #ffd700;
+}
+
+.pawn16-hud-turn {
+  font-size: 10px;
+  color: #999;
+}

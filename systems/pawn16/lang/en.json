@@ -1,6 +1,8 @@
 {
   "PAWN16.Settings.AutoSeed.Name": "Auto-seed Pawn16 board",
   "PAWN16.Settings.AutoSeed.Hint": "Create the demo board, seeded piece actors, seeded piece tokens, and helper macros when a GM opens a Pawn16 world.",
+  "PAWN16.Settings.AutoEndTurn.Name": "Auto-end turn when actions are exhausted",
+  "PAWN16.Settings.AutoEndTurn.Hint": "Automatically advance to the next side's turn once the active side has no remaining legal actions.",
   "PAWN16.Settings.WhitePlayerId.Name": "White player user ID",
   "PAWN16.Settings.WhitePlayerId.Hint": "Foundry user ID of the player who controls the white pieces. Leave blank to assign manually.",
   "PAWN16.Settings.BlackPlayerId.Name": "Black player user ID",

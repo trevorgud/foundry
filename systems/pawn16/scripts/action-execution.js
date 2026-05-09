@@ -37,6 +37,7 @@ export async function endTurn(_scene) {
     attackUsed: false
   };
   await setStateFlag(TURN_STATE_FLAG, nextState);
+  postTurnMessage(nextState);
   return nextState;
 }
 
@@ -84,6 +85,7 @@ export async function executeMove(scene, tokenDocument, targetFile, targetRank) 
     turnAfter: nextTurnState
   });
   await appendActionLog(result);
+  await maybeAutoEndTurn(scene);
   return result;
 }
 
@@ -111,10 +113,12 @@ export async function executeAttack(scene, tokenDocument, targetFile, targetRank
     turnAfter: nextTurnState
   });
   await appendActionLog(result);
+  await maybeAutoEndTurn(scene);
   return result;
 }
 
 export function assertCanUseAction(side, actionType, state) {
+  if (state.gameOver) throw new Error("The game is over.");
   if (state.currentSide !== side) throw new Error(`It is ${state.currentSide}'s turn.`);
   if (actionType === "move" && state.movementUsed) throw new Error(`${capitalize(side)} has already used movement this turn.`);
   if (actionType === "attack" && state.attackUsed) throw new Error(`${capitalize(side)} has already used an attack this turn.`);
@@ -171,6 +175,7 @@ async function applyEffects(scene, effects) {
       });
     } else if (effect.type === "capture-token") {
       await scene.deleteEmbeddedDocuments("Token", [effect.tokenId]);
+      await checkGameOver(effect.pieceId);
     }
   }
 }
@@ -225,6 +230,48 @@ async function appendActionLog(result) {
 
 function actionResultId() {
   return `action-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function sideHasLegalAction(scene, side, actionType) {
+  const boardScene = scene ?? canvas?.scene ?? null;
+  if (!boardScene) return false;
+  const position = positionFromScene(boardScene);
+  for (const piece of position.pieces.filter(p => p.side === side)) {
+    const profile = getMovementProfile(piece.type);
+    const actions = actionType === "attack"
+      ? generateLegalAttacks(position, piece, profile)
+      : generateLegalMoves(position, piece, profile);
+    if (actions.length) return true;
+  }
+  return false;
+}
+
+async function maybeAutoEndTurn(scene) {
+  if (!game.settings.get(SYSTEM_ID, "autoEndTurn")) return;
+  const state = getTurnState();
+  if (state.gameOver) return;
+  const moveBlocked = state.movementUsed || !sideHasLegalAction(scene, state.currentSide, "move");
+  const attackBlocked = state.attackUsed || !sideHasLegalAction(scene, state.currentSide, "attack");
+  if (moveBlocked && attackBlocked) await endTurn();
+}
+
+async function checkGameOver(capturedPieceId) {
+  if (!capturedPieceId?.includes("king")) return;
+  const state = getTurnState();
+  const winner = capturedPieceId.includes("white") ? "black" : "white";
+  const gameOverState = { ...state, gameOver: { winner, turn: state.turnNumber } };
+  await setStateFlag(TURN_STATE_FLAG, gameOverState);
+  ChatMessage.create({
+    content: `<strong>Game over — ${capitalize(winner)} wins!</strong> (${capitalize(winner === "white" ? "black" : "white")} king captured on turn ${state.turnNumber}.)`,
+    type: CONST.CHAT_MESSAGE_STYLES?.OTHER ?? 0
+  });
+}
+
+function postTurnMessage(state) {
+  ChatMessage.create({
+    content: `Turn ${state.turnNumber} — <strong>${capitalize(state.currentSide)}</strong> to move.`,
+    type: CONST.CHAT_MESSAGE_STYLES?.OTHER ?? 0
+  });
 }
 
 function capitalize(value) {
