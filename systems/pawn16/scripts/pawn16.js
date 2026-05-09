@@ -2,6 +2,9 @@ import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
 import { actionLog, attackPiece, attackSelectedPiece, clearBoardActionLog, endTurn, getTurnState, movePiece, moveSelectedPawnForward, moveSelectedPiece, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
 import { assertHealthy, clearSquare, legalAttacksForPiece, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, testState, unpause } from "./test-api.js";
+import { initHighlights } from "./highlights.js";
+import { legalActionsForToken } from "./action-execution.js";
+import { pixelToSquare } from "./rules.js";
 
 Hooks.once("init", () => {
   console.info("Pawn16 | Initializing");
@@ -38,6 +41,8 @@ Hooks.once("init", () => {
     type: String,
     default: ""
   });
+
+  initHighlights();
 });
 
 Hooks.once("ready", async () => {
@@ -115,7 +120,7 @@ Hooks.on("getSceneControlButtons", controls => {
   };
 });
 
-Hooks.on("preUpdateToken", (_tokenDocument, changed) => {
+Hooks.on("preUpdateToken", (tokenDocument, changed, options) => {
   if (game.system.id !== SYSTEM_ID) return;
 
   if ("rotation" in changed && changed.rotation !== 0) changed.rotation = 0;
@@ -124,6 +129,18 @@ Hooks.on("preUpdateToken", (_tokenDocument, changed) => {
   if ("x" in changed || "y" in changed) {
     changed.rotation = 0;
     changed.lockRotation = true;
+
+    if (options?.pawn16Driven) return;
+    if (!tokenDocument.getFlag(SYSTEM_ID, "seedId")) return;
+
+    const targetFile = "x" in changed ? Math.round(changed.x / 80) : tokenDocument.actor.system.file;
+    const targetRank = "y" in changed ? Math.round(changed.y / 80) : tokenDocument.actor.system.rank;
+    const legalMoves = legalActionsForToken(tokenDocument, "move");
+    const isLegal = legalMoves.some(a => a.to.file === targetFile && a.to.rank === targetRank);
+    if (!isLegal) {
+      ui.notifications.warn("That is not a legal move for this piece.");
+      return false;
+    }
   }
 });
 

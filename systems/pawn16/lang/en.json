@@ -6,7 +6,7 @@
   "PAWN16.Settings.BlackPlayerId.Name": "Black player user ID",
   "PAWN16.Settings.BlackPlayerId.Hint": "Foundry user ID of the player who controls the black pieces. Leave blank to assign manually.",
   "PAWN16.Controls.MoveForward": "Pawn16: Move Selected Piece",
-  "PAWN16.Controls.Attack": "Pawn16: Attack Selected Piece",
+  "PAWN16.Controls.Attack": "Pawn16: Attack (T to target)",
   "PAWN16.Controls.EndTurn": "Pawn16: End Turn",
   "PAWN16.Controls.Reset": "Pawn16: Reset Board"
 }

@@ -140,12 +140,22 @@ export async function attackSelectedPiece() {
   if (!canUseAction(actor.system.side, "attack", turnState)) return;
 
   const attacks = legalActionsForToken(token.document, "attack");
-  const attack = choosePreferredAction(attacks, actor.system.side);
-  if (!attack) {
+  if (!attacks.length) {
     ui.notifications.warn("That piece has no legal attack.");
     return;
   }
 
+  const targeted = game.user.targets.size === 1 ? Array.from(game.user.targets)[0] : null;
+  const targetedAction = targeted
+    ? attacks.find(a => a.to.file === targeted.document.actor?.system?.file && a.to.rank === targeted.document.actor?.system?.rank)
+    : null;
+
+  if (targeted && !targetedAction) {
+    ui.notifications.warn("Targeted piece is not a legal attack target. Press T to clear and re-target.");
+    return;
+  }
+
+  const attack = targetedAction ?? choosePreferredAction(attacks, actor.system.side);
   return executeAttack(canvas.scene, token.document, attack.to.file, attack.to.rank);
 }
 

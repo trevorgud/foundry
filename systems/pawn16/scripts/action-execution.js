@@ -160,7 +160,7 @@ async function applyEffects(scene, effects) {
         ...effect.pixel,
         rotation: 0,
         lockRotation: true
-      });
+      }, { pawn16Driven: true });
     } else if (effect.type === "update-actor-position") {
       const actor = game.actors.get(effect.actorId);
       if (!actor) throw new Error(`Actor ${effect.actorId} was not found for position effect.`);
