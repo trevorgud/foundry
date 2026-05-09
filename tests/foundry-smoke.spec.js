@@ -132,7 +132,7 @@ test.describe("Pawn16 piece rules", () => {
     const result = await page.evaluate(async () => {
       await game.pawn16.clearSquare(7, 13);
       await game.pawn16.clearSquare(6, 13);
-      await game.pawn16.movePiece("pawn", "white", 7, 7, 13);
+      const moveResult = await game.pawn16.movePiece("pawn", "white", 7, 7, 13);
 
       let secondMoveError = null;
       try {
@@ -142,7 +142,7 @@ test.describe("Pawn16 piece rules", () => {
       }
 
       await game.pawn16.setPiecePosition("pawn", "black", 6, 6, 12, { hasMoved: true });
-      await game.pawn16.attackPiece("pawn", "white", 7, 6, 12);
+      const attackResult = await game.pawn16.attackPiece("pawn", "white", 7, 6, 12);
 
       let secondAttackError = null;
       try {
@@ -152,12 +152,46 @@ test.describe("Pawn16 piece rules", () => {
       }
 
       const beforeEnd = game.pawn16.turnState();
+      const actionLog = game.pawn16.actionLog();
       const afterEnd = await game.pawn16.endTurn();
-      return { secondMoveError, secondAttackError, beforeEnd, afterEnd };
+      return { moveResult, attackResult, secondMoveError, secondAttackError, beforeEnd, afterEnd, actionLog };
     });
 
+    expect(result.moveResult).toMatchObject({
+      ok: true,
+      actionType: "move",
+      actor: { seedId: "pawn-white-7", pieceType: "pawn", side: "white" },
+      from: { file: 7, rank: 14 },
+      to: { file: 7, rank: 13 },
+      effects: [
+        { type: "move-token" },
+        { type: "update-actor-position" }
+      ],
+      turn: {
+        consumed: "move",
+        before: { movementUsed: false, attackUsed: false },
+        after: { movementUsed: true, attackUsed: false }
+      }
+    });
+    expect(result.attackResult).toMatchObject({
+      ok: true,
+      actionType: "attack",
+      actor: { seedId: "pawn-white-7", pieceType: "pawn", side: "white" },
+      target: { seedId: "pawn-black-6", pieceType: "pawn", side: "black" },
+      to: { file: 6, rank: 12 },
+      effects: [
+        { type: "capture-token", pieceId: "pawn-black-6" }
+      ],
+      turn: {
+        consumed: "attack",
+        before: { movementUsed: true, attackUsed: false },
+        after: { movementUsed: true, attackUsed: true }
+      }
+    });
     expect(result.secondMoveError).toContain("already used movement");
     expect(result.secondAttackError).toContain("already used an attack");
+    expect(result.actionLog).toHaveLength(2);
+    expect(result.actionLog.map(entry => entry.actionType)).toEqual(["move", "attack"]);
     expect(result.beforeEnd).toMatchObject({
       currentSide: "white",
       turnNumber: 1,

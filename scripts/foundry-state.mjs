@@ -117,6 +117,7 @@ try {
     return {
       health: healthy,
       turnState: game.pawn16.turnState?.() ?? null,
+      actionLog: game.pawn16.actionLog?.() ?? [],
       scene: scene ? {
         name: scene.name,
         width: scene.width,
@@ -139,6 +140,7 @@ try {
     options,
     health: snapshot.health,
     turnState: snapshot.turnState,
+    actionLog: snapshot.actionLog,
     scene: snapshot.scene,
     diagnostics: {
       seed: diagnostics,

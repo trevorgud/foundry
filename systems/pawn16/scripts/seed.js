@@ -7,11 +7,19 @@ import {
   squareToPixel,
   startingRank
 } from "./rules.js";
-import { positionFromScene, pieceFromToken } from "./movement-adapters.js";
-import { generateLegalAttacks, generateLegalMoves, getMovementProfile } from "./movement-engine.js";
+import {
+  assertCanUseAction,
+  clearActionLog,
+  endTurn as endBoardTurn,
+  ensureTurnState,
+  executeAttack,
+  executeMove,
+  getActionLog,
+  getTurnState as getBoardTurnState,
+  legalActionsForToken
+} from "./action-execution.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
-const TURN_STATE_FLAG = "turnState";
 const WHITE_PAWN_ASSET = "systems/pawn16/assets/white-pawn.svg";
 const BLACK_PAWN_ASSET = "systems/pawn16/assets/black-pawn.svg";
 const WHITE_KNIGHT_ASSET = "systems/pawn16/assets/white-knight.svg";
@@ -70,6 +78,7 @@ export async function resetPawn16Board() {
   await removeBoardTiles(scene);
   await ensurePieceTokens(scene, actors);
   await ensureTurnState(scene, { reset: true });
+  await clearActionLog(scene);
   unpauseGame();
   if (!scene.active) await scene.activate();
   ui.notifications.info("Pawn16 board reset.");
@@ -104,8 +113,7 @@ export async function moveSelectedPiece() {
     return;
   }
 
-  await applyMove(token.document, move);
-  await markActionUsed(canvas.scene, "move");
+  return executeMove(canvas.scene, token.document, move.to.file, move.to.rank);
 }
 
 export async function attackSelectedPiece() {
@@ -132,8 +140,7 @@ export async function attackSelectedPiece() {
     return;
   }
 
-  await applyAttack(canvas.scene, attack);
-  await markActionUsed(canvas.scene, "attack");
+  return executeAttack(canvas.scene, token.document, attack.to.file, attack.to.rank);
 }
 
 export async function movePiece(type, side, file, targetFile, targetRank) {
@@ -141,17 +148,7 @@ export async function movePiece(type, side, file, targetFile, targetRank) {
   const scene = findBoardScene();
   const token = findPieceToken(scene, type, side, file);
   if (!token) throw new Error(`Piece ${type}-${side}-${file} was not found on the board.`);
-  if (!canUseAction(side, "move", getTurnState(scene), { notify: false })) {
-    throw new Error(`${capitalize(side)} has already used movement this turn.`);
-  }
-
-  const move = legalActionsForToken(token, "move")
-    .find(action => action.to.file === targetFile && action.to.rank === targetRank);
-  if (!move) throw new Error(`Illegal move for ${type}-${side}-${file} to ${targetFile},${targetRank}.`);
-
-  await applyMove(token, move);
-  await markActionUsed(scene, "move");
-  return move;
+  return executeMove(scene, token, targetFile, targetRank);
 }
 
 export async function attackPiece(type, side, file, targetFile, targetRank) {
@@ -159,37 +156,28 @@ export async function attackPiece(type, side, file, targetFile, targetRank) {
   const scene = findBoardScene();
   const token = findPieceToken(scene, type, side, file);
   if (!token) throw new Error(`Piece ${type}-${side}-${file} was not found on the board.`);
-  if (!canUseAction(side, "attack", getTurnState(scene), { notify: false })) {
-    throw new Error(`${capitalize(side)} has already used an attack this turn.`);
-  }
-
-  const attack = legalActionsForToken(token, "attack")
-    .find(action => action.to.file === targetFile && action.to.rank === targetRank);
-  if (!attack) throw new Error(`Illegal attack for ${type}-${side}-${file} at ${targetFile},${targetRank}.`);
-
-  await applyAttack(scene, attack);
-  await markActionUsed(scene, "attack");
-  return attack;
+  return executeAttack(scene, token, targetFile, targetRank);
 }
 
 export function getTurnState(scene = findBoardScene()) {
-  return scene?.getFlag(SYSTEM_ID, TURN_STATE_FLAG) ?? initialTurnState();
+  return getBoardTurnState(scene);
 }
 
 export async function endTurn() {
   if (!game.user.isGM) throw new Error("Only a GM can end Pawn16 turns.");
   const scene = findBoardScene();
-  const state = getTurnState(scene);
-  const nextSide = state.currentSide === "white" ? "black" : "white";
-  const nextTurn = state.currentSide === "black" ? state.turnNumber + 1 : state.turnNumber;
-  const nextState = {
-    currentSide: nextSide,
-    turnNumber: nextTurn,
-    movementUsed: false,
-    attackUsed: false
-  };
-  await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, nextState);
-  return nextState;
+  return endBoardTurn(scene);
+}
+
+export function actionLog(scene = findBoardScene()) {
+  return getActionLog(scene);
+}
+
+export async function clearBoardActionLog() {
+  if (!game.user.isGM) throw new Error("Only a GM can clear the Pawn16 action log.");
+  const scene = findBoardScene();
+  await clearActionLog(scene);
+  return getActionLog(scene);
 }
 
 export async function syncPawnStateFromToken(tokenDocument, changed = {}) {
@@ -484,82 +472,14 @@ function assetForPiece(type, side) {
   return assets[type]?.[side] ?? WHITE_PAWN_ASSET;
 }
 
-function legalActionsForToken(tokenDocument, actionType) {
-  const scene = tokenDocument.parent ?? canvas.scene;
-  const from = {
-    file: tokenDocument.actor.system.file,
-    rank: tokenDocument.actor.system.rank
-  };
-  const position = positionFromScene(scene);
-  position.occupancy.delete(`${from.file},${from.rank}`);
-  const piece = pieceFromToken(tokenDocument);
-  const profile = getMovementProfile(piece.type);
-  return actionType === "attack"
-    ? generateLegalAttacks(position, piece, profile)
-    : generateLegalMoves(position, piece, profile);
-}
-
-async function applyMove(tokenDocument, move) {
-  const pixel = squareToPixel(move.to.file, move.to.rank);
-  await tokenDocument.update({
-    ...pixel,
-    rotation: 0,
-    lockRotation: true
-  });
-  await tokenDocument.actor.update({
-    "system.file": move.to.file,
-    "system.rank": move.to.rank,
-    "system.hasMoved": true
-  });
-}
-
-async function applyAttack(scene, attack) {
-  const tokenId = attack.capture?.tokenId;
-  if (!tokenId) throw new Error("Attack has no captured token.");
-  await scene.deleteEmbeddedDocuments("Token", [tokenId]);
-}
-
-async function ensureTurnState(scene, { reset = false } = {}) {
-  if (reset || !scene.getFlag(SYSTEM_ID, TURN_STATE_FLAG)) {
-    await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, initialTurnState());
-  }
-}
-
-function initialTurnState() {
-  return {
-    currentSide: "white",
-    turnNumber: 1,
-    movementUsed: false,
-    attackUsed: false
-  };
-}
-
 function canUseAction(side, actionType, state, { notify = true } = {}) {
-  if (state.currentSide !== side) {
-    if (notify) ui.notifications.warn(`It is ${state.currentSide}'s turn.`);
+  try {
+    assertCanUseAction(side, actionType, state);
+    return true;
+  } catch (error) {
+    if (notify) ui.notifications.warn(error.message);
     return false;
   }
-
-  if (actionType === "move" && state.movementUsed) {
-    if (notify) ui.notifications.warn("Movement has already been used this turn.");
-    return false;
-  }
-
-  if (actionType === "attack" && state.attackUsed) {
-    if (notify) ui.notifications.warn("Attack has already been used this turn.");
-    return false;
-  }
-
-  return true;
-}
-
-async function markActionUsed(scene, actionType) {
-  const state = getTurnState(scene);
-  await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, {
-    ...state,
-    movementUsed: state.movementUsed || actionType === "move",
-    attackUsed: state.attackUsed || actionType === "attack"
-  });
 }
 
 function choosePreferredAction(actions, side) {

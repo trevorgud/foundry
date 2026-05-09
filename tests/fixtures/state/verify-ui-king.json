@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "ok": true,
-  "generatedAt": "2026-05-09T19:21:17.142Z",
+  "generatedAt": "2026-05-09T19:39:34.197Z",
   "options": {
     "reset": true,
     "seededOnly": true,
@@ -137,6 +137,7 @@
     "movementUsed": false,
     "attackUsed": false
   },
+  "actionLog": [],
   "scene": {
     "name": "Pawn16 Board",
     "width": 1280,
@@ -169,7 +170,7 @@
   },
   "tokens": [
     {
-      "id": "WUMVnQm3tr1D3Bcm",
+      "id": "UT08ESWsDEEumCR9",
       "name": "White King 8",
       "seedId": "king-white-7",
       "pieceType": "king",
@@ -185,7 +186,7 @@
       "rotation": 0
     },
     {
-      "id": "cMfYhl2J2SVg8yFp",
+      "id": "B4xEtq5xb7uiZ7nP",
       "name": "Black King 8",
       "seedId": "king-black-7",
       "pieceType": "king",

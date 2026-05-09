@@ -150,7 +150,7 @@ Examples:
 
 ```bash
 STATE_SEEDED_ONLY=1 make state-debug
-STATE_PIECE_TYPE=pawn STATE_SIDE=white make state-debug
+STATE_PIECE_TYPE=bishop STATE_SIDE=white make state-debug
 STATE_TEXT=1 STATE_RANK_MIN=8 make state-debug
 STATE_VERIFY_UI=1 make state-debug
 ```
@@ -158,6 +158,7 @@ STATE_VERIFY_UI=1 make state-debug
 Schema contract:
 
 - `docs/schemas/pawn16-state.schema.json` defines the state payload contract.
+- State output includes `turnState` and the capped `actionLog`.
 - `make test-state-schema` validates committed fixtures quickly.
 - `make test-state-schema-live` validates a freshly captured live state payload.
 

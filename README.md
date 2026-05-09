@@ -152,7 +152,7 @@ STATE_VERIFY_UI=1 make state-debug
 Schema contract:
 
 - Schema file: `docs/schemas/pawn16-state.schema.json`
-- Output includes `schemaVersion` and `turnState`
+- Output includes `schemaVersion`, `turnState`, and `actionLog`
 - Fast check: `make test-state-schema`
 - Live check: `make test-state-schema-live`
 

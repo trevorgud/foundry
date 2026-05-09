@@ -32,7 +32,7 @@ systems/pawn16/scripts/pawn16.js
 - the shared piece actor data model
 - world setting `pawn16.autoSeed`
 - `game.pawn16` helper API
-- token controls for move/reset
+- token controls for move, attack, end turn, and reset
 - token hooks to keep seeded piece tokens rotation-locked
 
 ## Data Model
@@ -65,8 +65,11 @@ Piece action resolution now flows through:
 
 - `systems/pawn16/scripts/movement-engine.js` (pure action engine; still named for compatibility)
 - `systems/pawn16/scripts/movement-adapters.js` (Foundry-to-engine adapters)
+- `systems/pawn16/scripts/action-execution.js` (turn checks, structured action results, effect application, and action log)
 
 The engine evaluates declarative capability patterns (action type, directions, distances, occupancy targets, and path rules) and returns normalized action objects. Movement helpers still adapt actions back to the legacy move shape where needed.
+
+Execution is intentionally separate from legality. `movePiece()` and `attackPiece()` validate the selected action, build a structured result, apply explicit effects such as `move-token`, `update-actor-position`, or `capture-token`, consume the matching turn action, and append the result to a capped scene-flag action log.
 
 Current piece profiles:
 
@@ -117,6 +120,8 @@ game.pawn16.movePiece()
 game.pawn16.attackPiece()
 game.pawn16.endTurn()
 game.pawn16.turnState()
+game.pawn16.actionLog()
+game.pawn16.clearActionLog()
 game.pawn16.moveSelectedPawnForward()
 ```
 
@@ -150,7 +155,7 @@ Foundry/Playwright details are in `docs/foundry-v14-playwright-notes.md`.
 - Turn state is intentionally minimal: one move and one attack per side turn.
 - No player assignment for white vs black.
 - No rule enforcement for arbitrary drag movement beyond rotation and state sync.
-- Attack execution removes the target token, but there is no damage model, combat log, or win detection.
+- Attack execution currently uses a `capture-token` effect that removes the target token; there is no damage model or captured-piece tray yet.
 - No win/draw detection.
 - No ownership automation for regular players.
 

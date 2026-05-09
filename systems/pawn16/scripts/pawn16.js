@@ -1,6 +1,6 @@
 import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
-import { attackPiece, attackSelectedPiece, endTurn, getTurnState, movePiece, moveSelectedPawnForward, moveSelectedPiece, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
+import { actionLog, attackPiece, attackSelectedPiece, clearBoardActionLog, endTurn, getTurnState, movePiece, moveSelectedPawnForward, moveSelectedPiece, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
 import { assertHealthy, clearSquare, legalAttacksForPiece, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, testState, unpause } from "./test-api.js";
 
 Hooks.once("init", () => {
@@ -25,8 +25,10 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
   game.pawn16 = {
     assertHealthy,
+    actionLog,
     attackPiece,
     attackSelectedPiece,
+    clearActionLog: clearBoardActionLog,
     endTurn,
     movePiece,
     moveSelectedPawnForward,

@@ -10,6 +10,7 @@
     "options",
     "health",
     "turnState",
+    "actionLog",
     "scene",
     "diagnostics",
     "tokens",
@@ -81,6 +82,27 @@
         "turnNumber": { "type": "number" },
         "movementUsed": { "type": "boolean" },
         "attackUsed": { "type": "boolean" }
+      }
+    },
+    "actionLog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "ok", "createdAt", "actionType", "actor", "from", "to", "effects", "turn"],
+        "properties": {
+          "id": { "type": "string" },
+          "ok": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "actionType": { "type": "string" },
+          "patternId": { "type": "string" },
+          "actor": { "type": "object" },
+          "target": { "type": ["object", "null"] },
+          "from": { "type": "object" },
+          "to": { "type": "object" },
+          "effects": { "type": "array" },
+          "turn": { "type": "object" }
+        }
       }
     },
     "scene": {

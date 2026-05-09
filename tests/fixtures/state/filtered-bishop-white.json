@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "ok": true,
-  "generatedAt": "2026-05-09T19:21:01.534Z",
+  "generatedAt": "2026-05-09T19:39:18.459Z",
   "options": {
     "reset": true,
     "seededOnly": true,
@@ -137,6 +137,7 @@
     "movementUsed": false,
     "attackUsed": false
   },
+  "actionLog": [],
   "scene": {
     "name": "Pawn16 Board",
     "width": 1280,
@@ -152,8 +153,8 @@
       "seededCounts": {
         "byPieceType": {
           "pawn": 32,
-          "knight": 16,
           "bishop": 14,
+          "knight": 16,
           "king": 2
         },
         "bySide": {
@@ -169,7 +170,7 @@
   },
   "tokens": [
     {
-      "id": "hSAKm93U1OeHLoX1",
+      "id": "DpNA0mmemXnMkqyd",
       "name": "White Bishop 2",
       "seedId": "bishop-white-1",
       "pieceType": "bishop",
@@ -185,7 +186,7 @@
       "rotation": 0
     },
     {
-      "id": "Dz2rGMym5lyd4PM5",
+      "id": "n8QsHNJtbbHpExMn",
       "name": "White Bishop 4",
       "seedId": "bishop-white-3",
       "pieceType": "bishop",
@@ -201,7 +202,7 @@
       "rotation": 0
     },
     {
-      "id": "XToj4GmuL5xQXDQ9",
+      "id": "X6Tu2Ehe8VqgENXD",
       "name": "White Bishop 6",
       "seedId": "bishop-white-5",
       "pieceType": "bishop",
@@ -217,7 +218,7 @@
       "rotation": 0
     },
     {
-      "id": "kC6ne9juZgoxczTH",
+      "id": "DlBXeREgaBV0EtaN",
       "name": "White Bishop 10",
       "seedId": "bishop-white-9",
       "pieceType": "bishop",
@@ -233,7 +234,7 @@
       "rotation": 0
     },
     {
-      "id": "dFnb2VYnQZzJMfCb",
+      "id": "EQjmAHqrwCd923qh",
       "name": "White Bishop 12",
       "seedId": "bishop-white-11",
       "pieceType": "bishop",
@@ -249,23 +250,7 @@
       "rotation": 0
     },
     {
-      "id": "ssXAbnLNBkIGnbIq",
-      "name": "White Bishop 16",
-      "seedId": "bishop-white-15",
-      "pieceType": "bishop",
-      "side": "white",
-      "file": 15,
-      "rank": 15,
-      "hasMoved": false,
-      "x": 1200,
-      "y": 1200,
-      "textureSrc": "systems/pawn16/assets/white-bishop.svg",
-      "actorLink": true,
-      "lockRotation": true,
-      "rotation": 0
-    },
-    {
-      "id": "28a434iHx9JAAex8",
+      "id": "eC7UYKOSVuHsAYof",
       "name": "White Bishop 14",
       "seedId": "bishop-white-13",
       "pieceType": "bishop",
@@ -274,6 +259,22 @@
       "rank": 15,
       "hasMoved": false,
       "x": 1040,
+      "y": 1200,
+      "textureSrc": "systems/pawn16/assets/white-bishop.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "9q6VkZdenVlg6EbV",
+      "name": "White Bishop 16",
+      "seedId": "bishop-white-15",
+      "pieceType": "bishop",
+      "side": "white",
+      "file": 15,
+      "rank": 15,
+      "hasMoved": false,
+      "x": 1200,
       "y": 1200,
       "textureSrc": "systems/pawn16/assets/white-bishop.svg",
       "actorLink": true,

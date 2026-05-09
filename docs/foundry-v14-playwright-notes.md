@@ -118,6 +118,8 @@ game.pawn16.attackPiece()
 game.pawn16.legalAttacksForPiece()
 game.pawn16.endTurn()
 game.pawn16.turnState()
+game.pawn16.actionLog()
+game.pawn16.clearActionLog()
 ```
 
 Prefer reading this structured API instead of scraping UI text or inspecting screenshots.
