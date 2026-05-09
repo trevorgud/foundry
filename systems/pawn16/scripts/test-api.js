@@ -3,29 +3,39 @@ import {
   GRID_SIZE,
   SYSTEM_ID,
   isOnBoard,
-  legalPawnMoves,
   pixelToSquare,
-  squareKey,
   squareToPixel,
   startingRank
 } from "./rules.js";
+import { positionFromScene, pieceFromToken } from "./movement-adapters.js";
+import { generateLegalMoves, getMovementProfile, toLegacyMove } from "./movement-engine.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
 
 export function testState() {
   const scene = game.scenes.getName(BOARD_SCENE_NAME) ?? canvas.scene ?? null;
   const tokens = scene ? Array.from(scene.tokens) : [];
-  const pawnTokens = tokens.filter(token => token.actor?.type === "pawn");
+  const pieceTokens = tokens.filter(isPawn16PieceToken);
+  const pawnTokens = pieceTokens.filter(token => token.getFlag(SYSTEM_ID, "pieceType") === "pawn");
+  const knightTokens = pieceTokens.filter(token => token.getFlag(SYSTEM_ID, "pieceType") === "knight");
   const boardTiles = scene
     ? scene.tiles.filter(tile => tile.getFlag(SYSTEM_ID, "kind") === "board-image")
     : [];
 
-  const pawns = {
-    white: summarizeSide(pawnTokens, "white"),
-    black: summarizeSide(pawnTokens, "black"),
-    rotated: pawnTokens.filter(token => token.rotation !== 0).length,
-    unlockedRotation: pawnTokens.filter(token => token.lockRotation !== true).length,
-    unlinked: pawnTokens.filter(token => token.actorLink !== true).length
+  const pieces = {
+    pawns: {
+      white: summarizePieceSide(pawnTokens, "white", startingRank("white")),
+      black: summarizePieceSide(pawnTokens, "black", startingRank("black")),
+      count: pawnTokens.length
+    },
+    knights: {
+      white: summarizePieceSide(knightTokens, "white", BOARD_SIZE - 1),
+      black: summarizePieceSide(knightTokens, "black", 0),
+      count: knightTokens.length
+    },
+    rotated: pieceTokens.filter(token => token.rotation !== 0).length,
+    unlockedRotation: pieceTokens.filter(token => token.lockRotation !== true).length,
+    unlinked: pieceTokens.filter(token => token.actorLink !== true).length
   };
 
   return {
@@ -51,9 +61,11 @@ export function testState() {
       tiles: scene.tiles.size,
       boardImageTiles: boardTiles.length,
       tokens: scene.tokens.size,
-      pawnTokens: pawnTokens.length
+      pieceTokens: pieceTokens.length,
+      pawnTokens: pawnTokens.length,
+      knightTokens: knightTokens.length
     } : null,
-    pawns
+    pieces
   };
 }
 
@@ -76,16 +88,22 @@ export function assertHealthy() {
     if (state.scene.gridSize !== GRID_SIZE) issues.push(`Expected grid size ${GRID_SIZE}, got ${state.scene.gridSize}.`);
     if (state.scene.gridDistance !== 1) issues.push(`Expected grid distance 1, got ${state.scene.gridDistance}.`);
     if (state.scene.boardImageTiles !== 0) issues.push(`Expected no seeded board image tiles, got ${state.scene.boardImageTiles}.`);
+    if (state.scene.pieceTokens !== 64) issues.push(`Expected 64 seeded piece tokens, got ${state.scene.pieceTokens}.`);
     if (state.scene.pawnTokens !== 32) issues.push(`Expected 32 pawn tokens, got ${state.scene.pawnTokens}.`);
+    if (state.scene.knightTokens !== 32) issues.push(`Expected 32 knight tokens, got ${state.scene.knightTokens}.`);
   }
 
-  if (state.pawns.white.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} white pawns, got ${state.pawns.white.count}.`);
-  if (state.pawns.black.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} black pawns, got ${state.pawns.black.count}.`);
-  if (state.pawns.white.unexpectedRanks.length) issues.push(`White pawns on unexpected ranks: ${state.pawns.white.unexpectedRanks.join(", ")}.`);
-  if (state.pawns.black.unexpectedRanks.length) issues.push(`Black pawns on unexpected ranks: ${state.pawns.black.unexpectedRanks.join(", ")}.`);
-  if (state.pawns.rotated !== 0) issues.push(`Expected no rotated pawns, got ${state.pawns.rotated}.`);
-  if (state.pawns.unlockedRotation !== 0) issues.push(`Expected no pawns with unlocked rotation, got ${state.pawns.unlockedRotation}.`);
-  if (state.pawns.unlinked !== 0) issues.push(`Expected no unlinked pawn tokens, got ${state.pawns.unlinked}.`);
+  if (state.pieces.pawns.white.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} white pawns, got ${state.pieces.pawns.white.count}.`);
+  if (state.pieces.pawns.black.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} black pawns, got ${state.pieces.pawns.black.count}.`);
+  if (state.pieces.knights.white.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} white knights, got ${state.pieces.knights.white.count}.`);
+  if (state.pieces.knights.black.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} black knights, got ${state.pieces.knights.black.count}.`);
+  if (state.pieces.pawns.white.unexpectedRanks.length) issues.push(`White pawns on unexpected ranks: ${state.pieces.pawns.white.unexpectedRanks.join(", ")}.`);
+  if (state.pieces.pawns.black.unexpectedRanks.length) issues.push(`Black pawns on unexpected ranks: ${state.pieces.pawns.black.unexpectedRanks.join(", ")}.`);
+  if (state.pieces.knights.white.unexpectedRanks.length) issues.push(`White knights on unexpected ranks: ${state.pieces.knights.white.unexpectedRanks.join(", ")}.`);
+  if (state.pieces.knights.black.unexpectedRanks.length) issues.push(`Black knights on unexpected ranks: ${state.pieces.knights.black.unexpectedRanks.join(", ")}.`);
+  if (state.pieces.rotated !== 0) issues.push(`Expected no rotated pieces, got ${state.pieces.rotated}.`);
+  if (state.pieces.unlockedRotation !== 0) issues.push(`Expected no pieces with unlocked rotation, got ${state.pieces.unlockedRotation}.`);
+  if (state.pieces.unlinked !== 0) issues.push(`Expected no unlinked piece tokens, got ${state.pieces.unlinked}.`);
 
   return {
     ok: issues.length === 0,
@@ -101,26 +119,32 @@ export function unpause() {
 }
 
 export function legalMovesForPawn(side, file) {
+  return legalMovesForPiece("pawn", side, file);
+}
+
+export function legalMovesForPiece(type, side, file) {
   const scene = getBoardScene();
-  const token = findPawnToken(scene, side, file);
+  const token = findPieceToken(scene, type, side, file);
   if (!token) return [];
 
-  const occupied = getOccupiedSquares(scene, token.id);
-  return legalPawnMoves({
-    side: token.actor.system.side,
-    file: token.actor.system.file,
-    rank: token.actor.system.rank,
-    hasMoved: token.actor.system.hasMoved
-  }, occupied);
+  const position = positionFromScene(scene);
+  position.occupancy.delete(`${token.actor.system.file},${token.actor.system.rank}`);
+  const profile = getMovementProfile(type);
+  const piece = pieceFromToken(token);
+  return generateLegalMoves(position, piece, profile).map(toLegacyMove);
 }
 
 export async function setPawnPosition(side, file, targetFile, targetRank, { hasMoved } = {}) {
+  return setPiecePosition("pawn", side, file, targetFile, targetRank, { hasMoved });
+}
+
+export async function setPiecePosition(type, side, file, targetFile, targetRank, { hasMoved } = {}) {
   if (!game.user.isGM) throw new Error("Only a GM can set Pawn16 positions.");
   if (!isOnBoard(targetFile, targetRank)) throw new Error(`Target square ${targetFile},${targetRank} is off-board.`);
 
   const scene = getBoardScene();
-  const token = findPawnToken(scene, side, file);
-  if (!token) throw new Error(`Pawn ${side}-${file} was not found on the board.`);
+  const token = findPieceToken(scene, type, side, file);
+  if (!token) throw new Error(`Piece ${type}-${side}-${file} was not found on the board.`);
 
   const position = squareToPixel(targetFile, targetRank);
   await token.update({
@@ -137,6 +161,7 @@ export async function setPawnPosition(side, file, targetFile, targetRank, { hasM
   await token.actor.update(updates);
 
   return {
+    type,
     side,
     file,
     targetFile,
@@ -152,7 +177,7 @@ export async function clearSquare(file, rank) {
   if (!scene) return 0;
 
   const tokens = scene.tokens.filter(token => {
-    if (token.actor?.type !== "pawn") return false;
+    if (!isPawn16PieceToken(token)) return false;
     return token.actor.system.file === file && token.actor.system.rank === rank;
   });
 
@@ -161,9 +186,8 @@ export async function clearSquare(file, rank) {
   return tokens.length;
 }
 
-function summarizeSide(tokens, side) {
+function summarizePieceSide(tokens, side, expectedRank) {
   const sideTokens = tokens.filter(token => token.actor?.system?.side === side);
-  const expectedRank = startingRank(side);
   const ranks = {};
   const unexpectedRanks = new Set();
 
@@ -185,26 +209,12 @@ function getBoardScene() {
   return game.scenes.getName(BOARD_SCENE_NAME) ?? canvas.scene ?? null;
 }
 
-function findPawnToken(scene, side, file) {
+function findPieceToken(scene, type, side, file) {
   if (!scene) return null;
-  const seedId = `${side}-${file}`;
+  const seedId = `${type}-${side}-${file}`;
   return scene.tokens.find(token => token.getFlag(SYSTEM_ID, "seedId") === seedId) ?? null;
 }
 
-function getOccupiedSquares(scene, excludeTokenId = null) {
-  const occupied = new Map();
-  if (!scene) return occupied;
-
-  for (const token of scene.tokens) {
-    if (token.id === excludeTokenId) continue;
-    if (token.actor?.type !== "pawn") continue;
-
-    const { file, rank } = token.actor.system;
-    occupied.set(squareKey(file, rank), {
-      side: token.actor.system.side,
-      tokenId: token.id
-    });
-  }
-
-  return occupied;
+function isPawn16PieceToken(token) {
+  return Boolean(token?.getFlag(SYSTEM_ID, "seedId"));
 }

@@ -2,25 +2,27 @@ import {
   BOARD_SIZE,
   GRID_SIZE,
   SYSTEM_ID,
-  legalPawnMoves,
   pixelToSquare,
-  squareKey,
   squareToPixel,
   startingRank
 } from "./rules.js";
+import { positionFromScene, pieceFromToken } from "./movement-adapters.js";
+import { generateLegalMoves, getMovementProfile } from "./movement-engine.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
 const WHITE_PAWN_ASSET = "systems/pawn16/assets/white-pawn.svg";
 const BLACK_PAWN_ASSET = "systems/pawn16/assets/black-pawn.svg";
+const WHITE_KNIGHT_ASSET = "systems/pawn16/assets/white-pawn.svg";
+const BLACK_KNIGHT_ASSET = "systems/pawn16/assets/black-pawn.svg";
 
 export async function seedPawn16World() {
   if (game.system.id !== SYSTEM_ID || !game.user.isGM) return;
   if (!game.settings.get(SYSTEM_ID, "autoSeed")) return;
 
   const scene = await ensureBoardScene();
-  const actors = await ensurePawnActors();
+  const actors = await ensurePieceActors();
   await removeBoardTiles(scene);
-  await ensurePawnTokens(scene, actors);
+  await ensurePieceTokens(scene, actors);
   await ensureMacros();
   unpauseGame();
 
@@ -45,9 +47,9 @@ export async function resetPawn16Board() {
     await scene.deleteEmbeddedDocuments("Token", seededTokens.map(token => token.id));
   }
 
-  const actors = await ensurePawnActors({ reset: true });
+  const actors = await ensurePieceActors({ reset: true });
   await removeBoardTiles(scene);
-  await ensurePawnTokens(scene, actors);
+  await ensurePieceTokens(scene, actors);
   unpauseGame();
   if (!scene.active) await scene.activate();
   ui.notifications.info("Pawn16 board reset.");
@@ -56,43 +58,42 @@ export async function resetPawn16Board() {
 export async function moveSelectedPawnForward() {
   const controlled = canvas.tokens?.controlled ?? [];
   if (controlled.length !== 1) {
-    ui.notifications.warn("Select exactly one Pawn16 pawn.");
+    ui.notifications.warn("Select exactly one Pawn16 piece.");
     return;
   }
 
   const token = controlled[0];
   const actor = token.actor;
   if (actor?.type !== "pawn") {
-    ui.notifications.warn("The selected token is not a Pawn16 pawn.");
+    ui.notifications.warn("The selected token is not a Pawn16 piece.");
     return;
   }
 
-  const from = pixelToSquare(token.document.x, token.document.y);
-  const occupied = getOccupiedSquares(canvas.scene, token.document.id);
-  const moves = legalPawnMoves({
-    side: actor.system.side,
-    file: from.file,
-    rank: from.rank,
-    hasMoved: actor.system.hasMoved
-  }, occupied);
-
-  const move = moves.find(candidate => candidate.kind === "move" && Math.abs(candidate.rank - from.rank) === 1)
-    ?? moves.find(candidate => candidate.kind === "move");
+  const from = {
+    file: actor.system.file,
+    rank: actor.system.rank
+  };
+  const position = positionFromScene(canvas.scene);
+  position.occupancy.delete(`${from.file},${from.rank}`);
+  const piece = pieceFromToken(token.document);
+  const profile = getMovementProfile(piece.type);
+  const moves = generateLegalMoves(position, piece, profile);
+  const move = choosePreferredMove(moves, actor.system.side);
 
   if (!move) {
-    ui.notifications.warn("That pawn has no open forward move.");
+    ui.notifications.warn("That piece has no legal move.");
     return;
   }
 
-  const position = squareToPixel(move.file, move.rank);
+  const pixel = squareToPixel(move.to.file, move.to.rank);
   await token.document.update({
-    ...position,
+    ...pixel,
     rotation: 0,
     lockRotation: true
   });
   await actor.update({
-    "system.file": move.file,
-    "system.rank": move.rank,
+    "system.file": move.to.file,
+    "system.rank": move.to.rank,
     "system.hasMoved": true
   });
 }
@@ -100,6 +101,7 @@ export async function moveSelectedPawnForward() {
 export async function syncPawnStateFromToken(tokenDocument, changed = {}) {
   if (!game.user.isGM) return;
   if (tokenDocument.actor?.type !== "pawn") return;
+  if (!tokenDocument.getFlag(SYSTEM_ID, "seedId")) return;
   if (!("x" in changed || "y" in changed || "rotation" in changed || "lockRotation" in changed)) return;
 
   const { file, rank } = pixelToSquare(tokenDocument.x, tokenDocument.y);
@@ -182,72 +184,77 @@ async function removeBoardTiles(scene) {
   }
 }
 
-async function ensurePawnActors({ reset = false } = {}) {
+async function ensurePieceActors({ reset = false } = {}) {
   const actors = [];
 
-  for (const side of ["white", "black"]) {
-    for (let file = 0; file < BOARD_SIZE; file += 1) {
-      const seedId = pawnSeedId(side, file);
-      const rank = startingRank(side);
-      const name = `${capitalize(side)} Pawn ${file + 1}`;
-      const img = side === "white" ? WHITE_PAWN_ASSET : BLACK_PAWN_ASSET;
-      const disposition = side === "white"
-        ? CONST.TOKEN_DISPOSITIONS.FRIENDLY
-        : CONST.TOKEN_DISPOSITIONS.HOSTILE;
-      const data = {
-        name,
-        type: "pawn",
-        img,
-        system: {
-          side,
-          file,
-          rank,
-          hasMoved: false
-        },
-        prototypeToken: {
+  for (const config of pieceSeedConfigs()) {
+    for (const side of ["white", "black"]) {
+      for (let file = 0; file < BOARD_SIZE; file += 1) {
+        const seedId = pieceSeedId(config.type, side, file);
+        const rank = config.rankForSide(side);
+        const name = `${capitalize(side)} ${capitalize(config.type)} ${file + 1}`;
+        const img = config.assetForSide(side);
+        const disposition = side === "white"
+          ? CONST.TOKEN_DISPOSITIONS.FRIENDLY
+          : CONST.TOKEN_DISPOSITIONS.HOSTILE;
+        const data = {
           name,
-          actorLink: true,
-          width: 1,
-          height: 1,
-          texture: { src: img },
-          rotation: 0,
-          lockRotation: true,
-          disposition
-        },
-        flags: {
-          [SYSTEM_ID]: {
-            seedId,
+          type: "pawn",
+          img,
+          system: {
             side,
-            file
+            file,
+            rank,
+            hasMoved: false
+          },
+          prototypeToken: {
+            name,
+            actorLink: true,
+            width: 1,
+            height: 1,
+            texture: { src: img },
+            rotation: 0,
+            lockRotation: true,
+            disposition
+          },
+          flags: {
+            [SYSTEM_ID]: {
+              seedId,
+              side,
+              file,
+              pieceType: config.type
+            }
           }
-        }
-      };
+        };
 
-      let actor = game.actors.find(candidate => candidate.getFlag(SYSTEM_ID, "seedId") === seedId);
-      if (!actor) actor = await Actor.create(data);
-      else if (reset) await actor.update(data);
-      else await actor.update({
-        img,
-        "prototypeToken.texture.src": img,
-        "prototypeToken.rotation": 0,
-        "prototypeToken.lockRotation": true,
-        "prototypeToken.width": 1,
-        "prototypeToken.height": 1,
-        "prototypeToken.actorLink": true,
-        "prototypeToken.disposition": disposition
-      });
-      actors.push(actor);
+        let actor = game.actors.find(candidate => candidate.getFlag(SYSTEM_ID, "seedId") === seedId);
+        if (!actor) actor = await Actor.create(data);
+        if (!actor) continue;
+        else if (reset) await actor.update(data);
+        else await actor.update({
+          img,
+          "prototypeToken.texture.src": img,
+          "prototypeToken.rotation": 0,
+          "prototypeToken.lockRotation": true,
+          "prototypeToken.width": 1,
+          "prototypeToken.height": 1,
+          "prototypeToken.actorLink": true,
+          "prototypeToken.disposition": disposition
+        });
+        actors.push(actor);
+      }
     }
   }
 
   return actors;
 }
 
-async function ensurePawnTokens(scene, actors) {
+async function ensurePieceTokens(scene, actors) {
   const tokenData = [];
 
   for (const actor of actors) {
     const seedId = actor.getFlag(SYSTEM_ID, "seedId");
+    const pieceType = actor.getFlag(SYSTEM_ID, "pieceType") ?? "pawn";
     const existing = scene.tokens.find(token => token.getFlag(SYSTEM_ID, "seedId") === seedId);
     if (existing) {
       const updates = {};
@@ -257,6 +264,7 @@ async function ensurePawnTokens(scene, actors) {
       if (existing.height !== 1) updates.height = 1;
       if (existing.actorLink !== true) updates.actorLink = true;
       if (existing.texture?.src !== actor.img) updates["texture.src"] = actor.img;
+      if (existing.getFlag(SYSTEM_ID, "pieceType") !== pieceType) updates[`flags.${SYSTEM_ID}.pieceType`] = pieceType;
       if (Object.keys(updates).length) await existing.update(updates);
       continue;
     }
@@ -272,7 +280,8 @@ async function ensurePawnTokens(scene, actors) {
       lockRotation: true,
       flags: {
         [SYSTEM_ID]: {
-          seedId
+          seedId,
+          pieceType
         }
       }
     });
@@ -284,7 +293,7 @@ async function ensurePawnTokens(scene, actors) {
 
 async function ensureMacros() {
   await ensureMacro(
-    "Pawn16: Move Selected Pawn Forward",
+    "Pawn16: Move Selected Piece",
     "game.pawn16.moveSelectedPawnForward();",
     "icons/svg/upgrade.svg"
   );
@@ -316,25 +325,46 @@ async function ensureMacro(name, command, img) {
   });
 }
 
-function getOccupiedSquares(scene, excludeTokenId = null) {
-  const occupied = new Map();
-
-  for (const token of scene.tokens) {
-    if (token.id === excludeTokenId) continue;
-    if (token.actor?.type !== "pawn") continue;
-
-    const { file, rank } = pixelToSquare(token.x, token.y);
-    occupied.set(squareKey(file, rank), {
-      side: token.actor.system.side,
-      tokenId: token.id
-    });
-  }
-
-  return occupied;
+function pieceSeedId(type, side, file) {
+  return `${type}-${side}-${file}`;
 }
 
-function pawnSeedId(side, file) {
-  return `${side}-${file}`;
+function pieceSeedConfigs() {
+  return [
+    {
+      type: "pawn",
+      rankForSide: side => startingRank(side),
+      assetForSide: side => (side === "white" ? WHITE_PAWN_ASSET : BLACK_PAWN_ASSET)
+    },
+    {
+      type: "knight",
+      rankForSide: side => (side === "white" ? BOARD_SIZE - 1 : 0),
+      assetForSide: side => (side === "white" ? WHITE_KNIGHT_ASSET : BLACK_KNIGHT_ASSET)
+    }
+  ];
+}
+
+function choosePreferredMove(moves, side) {
+  const legalMoves = moves.filter(candidate => candidate.kind === "move");
+  if (!legalMoves.length) return null;
+
+  const ordered = [...legalMoves].sort((a, b) => {
+    const directionScore = directionPriority(a.direction, side) - directionPriority(b.direction, side);
+    if (directionScore !== 0) return directionScore;
+    if (a.distance !== b.distance) return a.distance - b.distance;
+    if (a.to.rank !== b.to.rank) return a.to.rank - b.to.rank;
+    return a.to.file - b.to.file;
+  });
+
+  return ordered[0] ?? null;
+}
+
+function directionPriority(direction, side) {
+  const preferred = side === "white"
+    ? ["forward", "left", "right", "backward"]
+    : ["forward", "right", "left", "backward"];
+  const index = preferred.indexOf(direction);
+  return index === -1 ? preferred.length : index;
 }
 
 function capitalize(value) {

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
+    "test:engine": "node --test tests/movement-engine.spec.js",
     "test:foundry": "playwright test tests/foundry-smoke.spec.js",
     "foundry:state": "node scripts/foundry-state.mjs",
     "foundry:screenshot": "node scripts/foundry-screenshot.mjs",

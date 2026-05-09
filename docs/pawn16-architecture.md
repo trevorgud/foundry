@@ -29,17 +29,17 @@ systems/pawn16/scripts/pawn16.js
 
 `pawn16.js` registers:
 
-- the `pawn` actor data model
+- the shared piece actor data model
 - world setting `pawn16.autoSeed`
 - `game.pawn16` helper API
 - token controls for move/reset
-- token hooks to keep pawn tokens rotation-locked
+- token hooks to keep seeded piece tokens rotation-locked
 
 ## Data Model
 
 `systems/pawn16/scripts/data-models.js` defines `PawnDataModel`.
 
-Each pawn actor stores:
+Each seeded piece actor stores:
 
 ```js
 system.side       // "white" or "black"
@@ -50,7 +50,7 @@ system.hasMoved   // boolean
 
 ## Rules
 
-`systems/pawn16/scripts/rules.js` contains board constants and pure-ish rule helpers:
+`systems/pawn16/scripts/rules.js` contains board constants and coordinate helpers:
 
 ```js
 BOARD_SIZE = 16
@@ -61,7 +61,19 @@ pixelToSquare(x, y)
 legalPawnMoves(pawn, occupied)
 ```
 
-The current interaction moves a selected pawn forward. Diagonal capture logic exists in `legalPawnMoves`, but there is not yet a full turn system or player-side enforcement.
+Pawn movement resolution now flows through:
+
+- `systems/pawn16/scripts/movement-engine.js` (pure move engine)
+- `systems/pawn16/scripts/movement-adapters.js` (Foundry-to-engine adapters)
+
+The engine evaluates declarative capability patterns (directions, distances, occupancy targets, and path rules) and returns normalized move objects. The current pawn behavior is defined as a profile in the engine and then adapted back to legacy move shape where needed.
+
+Current piece profiles:
+
+- `pawn`: exactly one square forward/backward/left/right onto empty squares
+- `knight` (custom Pawn16 type): one or two squares forward/backward/left/right onto empty squares, with path blocking on two-square moves
+
+The current interaction moves a selected piece according to its profile. There is not yet a full turn system or player-side enforcement.
 
 ## Seeding
 
@@ -74,7 +86,8 @@ On GM `ready`, if `pawn16.autoSeed` is enabled, it:
 - uses Foundry's native square grid at `80px`
 - removes stale seeded board-image tiles
 - ensures 16 white and 16 black pawn actors
-- ensures linked pawn tokens
+- ensures 16 white and 16 black knight actors
+- ensures linked seeded piece tokens
 - creates helper macros
 - unpauses the game
 
@@ -114,10 +127,12 @@ The expected healthy state includes:
 - scene size `1280x1280`
 - grid size `80`
 - zero board-image tiles
-- 32 pawn tokens
+- 64 seeded piece tokens
 - white pawns on rank 14
 - black pawns on rank 1
-- no rotated or rotation-unlocked pawn tokens
+- white knights on rank 15
+- black knights on rank 0
+- no rotated or rotation-unlocked seeded piece tokens
 
 Foundry/Playwright details are in `docs/foundry-v14-playwright-notes.md`.
 

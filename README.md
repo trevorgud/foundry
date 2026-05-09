@@ -82,7 +82,7 @@ To try it:
 
 4. Launch the world as GM.
 
-When the world opens, the system seeds a native 16x16 Foundry grid scene named `Pawn16 Board`, 16 white pawns, 16 black pawns, and two helper macros. Select one pawn and use the `Pawn16: Move Selected Pawn Forward` token control or macro to make a legal forward pawn move.
+When the world opens, the system seeds a native 16x16 Foundry grid scene named `Pawn16 Board`, 16 white pawns, 16 black pawns, 16 white knights, 16 black knights, and two helper macros. Select one piece and use the `Pawn16: Move Selected Piece` token control or macro to make a legal move for that piece type.
 
 The generated world data remains local under `foundry-data/` and is ignored by Git.
 
@@ -117,9 +117,10 @@ The smoke test launches the `pawn16-test` world, logs in as `Gamemaster`, resets
 - active board scene is `1280x1280`
 - native grid size is `80`
 - no seeded board image tiles exist
-- 32 pawn tokens exist
-- pawn rotations are locked at `0`
+- 64 seeded piece tokens exist
+- piece rotations are locked at `0`
 - white and black pawns are on their starting ranks
+- white and black knights are on their starting ranks
 
 The main feedback artifact is JSON at `test-results/pawn16-state.json`. Screenshots are saved locally for debugging and are ignored by Git.
 

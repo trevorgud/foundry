@@ -1,3 +1,6 @@
+import { positionFromOccupiedMap } from "./movement-adapters.js";
+import { generateLegalMoves, getMovementProfile, toLegacyMove } from "./movement-engine.js";
+
 export const SYSTEM_ID = "pawn16";
 export const BOARD_SIZE = 16;
 export const GRID_SIZE = 80;
@@ -29,27 +32,16 @@ export function pixelToSquare(x, y) {
 }
 
 export function legalPawnMoves(pawn, occupied) {
-  const direction = pawn.side === "white" ? -1 : 1;
-  const moves = [];
-  const oneRank = pawn.rank + direction;
+  const profile = getMovementProfile("pawn");
+  const position = positionFromOccupiedMap(occupied, { boardSize: BOARD_SIZE });
+  const piece = {
+    id: "selected-pawn",
+    type: "pawn",
+    side: pawn.side,
+    file: pawn.file,
+    rank: pawn.rank,
+    hasMoved: pawn.hasMoved === true
+  };
 
-  if (isOnBoard(pawn.file, oneRank) && !occupied.has(squareKey(pawn.file, oneRank))) {
-    moves.push({ file: pawn.file, rank: oneRank, kind: "move" });
-
-    const twoRank = pawn.rank + (direction * 2);
-    if (!pawn.hasMoved && isOnBoard(pawn.file, twoRank) && !occupied.has(squareKey(pawn.file, twoRank))) {
-      moves.push({ file: pawn.file, rank: twoRank, kind: "move" });
-    }
-  }
-
-  for (const file of [pawn.file - 1, pawn.file + 1]) {
-    if (!isOnBoard(file, oneRank)) continue;
-
-    const occupant = occupied.get(squareKey(file, oneRank));
-    if (occupant && occupant.side !== pawn.side) {
-      moves.push({ file, rank: oneRank, kind: "capture", tokenId: occupant.tokenId });
-    }
-  }
-
-  return moves;
+  return generateLegalMoves(position, piece, profile).map(toLegacyMove);
 }

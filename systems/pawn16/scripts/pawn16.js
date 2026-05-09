@@ -1,13 +1,14 @@
 import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
 import { moveSelectedPawnForward, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
-import { assertHealthy, clearSquare, legalMovesForPawn, setPawnPosition, testState, unpause } from "./test-api.js";
+import { assertHealthy, clearSquare, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, testState, unpause } from "./test-api.js";
 
 Hooks.once("init", () => {
   console.info("Pawn16 | Initializing");
 
   CONFIG.Actor.dataModels ??= {};
   CONFIG.Actor.dataModels.pawn = PawnDataModel;
+  CONFIG.Actor.dataModels.knight = PawnDataModel;
 
   game.settings.register(SYSTEM_ID, "autoSeed", {
     name: "PAWN16.Settings.AutoSeed.Name",
@@ -26,7 +27,9 @@ Hooks.once("ready", async () => {
     resetBoard: resetPawn16Board,
     seedWorld: seedPawn16World,
     legalMovesForPawn,
+    legalMovesForPiece,
     setPawnPosition,
+    setPiecePosition,
     clearSquare,
     testState,
     unpause,

@@ -1,7 +1,7 @@
 {
   "id": "pawn16",
   "title": "Pawn16",
-  "description": "A tiny reproducible Foundry VTT test system: a 16x16 board with pawns only.",
+  "description": "A tiny reproducible Foundry VTT test system: a 16x16 board with pawns and knights.",
   "version": "0.1.0",
   "compatibility": {
     "minimum": "14",
@@ -27,7 +27,8 @@
   ],
   "documentTypes": {
     "Actor": {
-      "pawn": {}
+      "pawn": {},
+      "knight": {}
     }
   },
   "socket": false,
