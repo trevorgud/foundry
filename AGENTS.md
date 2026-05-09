@@ -18,7 +18,7 @@ This repo runs Foundry VTT in Docker and contains a tiny custom Foundry system n
 There are two tracks:
 
 - Server-only runtime: `docker compose up -d`
-- Dev/test runtime: `make dev-restart && make test`
+- Dev/test runtime: `make dev-restart` plus an explicit test target such as `make test-all` or `make test-foundry-health`
 
 Keep those tracks separate. Do not add test-only services or browser tooling to the base `compose.yml`; use `compose.dev.yml`.
 
@@ -57,7 +57,7 @@ After changing system, test, or compose code:
 ```bash
 docker compose config --quiet
 docker compose -f compose.yml -f compose.dev.yml config --quiet
-make test
+make test-all
 ```
 
 For state details:
@@ -118,5 +118,5 @@ Before finalizing work, report:
 
 - files changed
 - validation commands run
-- whether `make test` passed
+- whether the chosen explicit test target(s) passed
 - any remaining limitation or manual step

@@ -184,7 +184,9 @@ Use:
 
 ```bash
 make dev-restart
-make test
+make test-foundry
+make test-foundry-health
+make test-foundry-rules
 make state
 make screenshot
 ```

@@ -27,7 +27,13 @@ Dev/test runtime:
 
 ```bash
 make dev-restart
-make test
+# choose explicit test scope:
+make test-all
+# or a focused subset:
+make test-engine
+make test-foundry-health
+make test-foundry-rules
+make test-foundry
 ```
 
 The dev/test path uses `compose.dev.yml`, auto-launches `pawn16-test`, and runs Playwright inside Docker. It should not require host Node, npm, Chromium, or browser shared libraries.
@@ -37,7 +43,10 @@ The dev/test path uses `compose.dev.yml`, auto-launches `pawn16-test`, and runs 
 After code changes:
 
 ```bash
-make test
+# choose one explicit target:
+make test-foundry-health
+# or broader:
+make test-all
 ```
 
 For structured state:
@@ -103,7 +112,7 @@ If tests report a stale board image tile, the seeder should delete any tile flag
 
 ```bash
 make dev-restart
-make test
+make test-foundry
 ```
 
 If pawn state looks wrong, run:
@@ -123,7 +132,11 @@ make logs           # server-only logs
 make dev-up         # dev overlay Foundry runtime
 make dev-restart    # dev overlay recreate
 make dev-logs       # dev overlay logs
-make test           # Dockerized Playwright smoke test
+make test-all       # engine + full Foundry suite
+make test-engine    # pure movement engine unit tests
+make test-foundry-health # health-only Foundry smoke subset
+make test-foundry-rules  # rules-only Foundry smoke subset
+make test-foundry   # full Foundry Playwright suite
 make state          # structured state artifact
 make screenshot     # browser screenshot artifact
 make dev-shell      # shell inside the Playwright test container
@@ -136,7 +149,7 @@ Run at least:
 ```bash
 docker compose config --quiet
 docker compose -f compose.yml -f compose.dev.yml config --quiet
-make test
+make test-all
 ```
 
 Mention if any check could not be run.

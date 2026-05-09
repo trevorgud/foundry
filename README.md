@@ -92,7 +92,12 @@ The repo includes a dev/test overlay at `compose.dev.yml`. The base `compose.yml
 
 ```bash
 make dev-restart
-make test
+make test-all            # full explicit test pass
+# or choose a targeted subset:
+make test-engine
+make test-foundry-health
+make test-foundry-rules
+make test-foundry
 ```
 
 Useful targets:
@@ -102,6 +107,11 @@ make up          # server-only Foundry runtime
 make restart     # server-only recreate
 make dev-up      # Foundry with dev/test overlay
 make dev-restart # recreate Foundry with pawn16-test auto-launched
+make test-all    # engine + full Foundry suite
+make test-engine # pure movement engine unit tests
+make test-foundry-health # health-only Foundry smoke subset
+make test-foundry-rules  # rules-only Foundry smoke subset
+make test-foundry # full Foundry Playwright suite
 make state       # writes and prints test-results/pawn16-state.json
 make screenshot  # writes test-results/pawn16-board.png
 make logs        # follows Foundry logs

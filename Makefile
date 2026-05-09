@@ -1,7 +1,7 @@
 COMPOSE_DEV = docker compose -f compose.yml -f compose.dev.yml
 TEST_DEPS = test -d node_modules/@playwright/test || npm ci
 
-.PHONY: up down restart logs dev-up dev-restart dev-logs dev-shell configure-world test test-foundry test-foundry-local state screenshot
+.PHONY: up down restart logs dev-up dev-restart dev-logs dev-shell configure-world test-all test-engine test-foundry test-foundry-health test-foundry-rules test-foundry-local state screenshot
 
 up:
 	docker compose up -d
@@ -30,10 +30,19 @@ dev-shell:
 configure-world:
 	$(COMPOSE_DEV) run --rm test node scripts/configure-foundry.mjs
 
-test: test-foundry
+test-all: test-engine test-foundry
+
+test-engine:
+	$(COMPOSE_DEV) run --rm test sh -lc '$(TEST_DEPS) && npm run test:engine'
 
 test-foundry:
 	$(COMPOSE_DEV) run --rm test sh -lc '$(TEST_DEPS) && npm run test:foundry'
+
+test-foundry-health:
+	$(COMPOSE_DEV) run --rm test sh -lc '$(TEST_DEPS) && npm run test:foundry:health'
+
+test-foundry-rules:
+	$(COMPOSE_DEV) run --rm test sh -lc '$(TEST_DEPS) && npm run test:foundry:rules'
 
 test-foundry-local:
 	npm run test:foundry
