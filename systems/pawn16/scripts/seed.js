@@ -12,8 +12,8 @@ import { generateLegalMoves, getMovementProfile } from "./movement-engine.js";
 const BOARD_SCENE_NAME = "Pawn16 Board";
 const WHITE_PAWN_ASSET = "systems/pawn16/assets/white-pawn.svg";
 const BLACK_PAWN_ASSET = "systems/pawn16/assets/black-pawn.svg";
-const WHITE_KNIGHT_ASSET = "systems/pawn16/assets/white-pawn.svg";
-const BLACK_KNIGHT_ASSET = "systems/pawn16/assets/black-pawn.svg";
+const WHITE_KNIGHT_ASSET = "systems/pawn16/assets/white-knight.svg";
+const BLACK_KNIGHT_ASSET = "systems/pawn16/assets/black-knight.svg";
 
 export async function seedPawn16World() {
   if (game.system.id !== SYSTEM_ID || !game.user.isGM) return;

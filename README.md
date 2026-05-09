@@ -113,6 +113,7 @@ make test-foundry-health # health-only Foundry smoke subset
 make test-foundry-rules  # rules-only Foundry smoke subset
 make test-foundry # full Foundry Playwright suite
 make state       # writes and prints test-results/pawn16-state.json
+make state-debug # extended JSON state with optional filters/text/UI verify
 make screenshot  # writes test-results/pawn16-board.png
 make logs        # follows Foundry logs
 ```
@@ -133,6 +134,15 @@ The smoke test launches the `pawn16-test` world, logs in as `Gamemaster`, resets
 - white and black knights are on their starting ranks
 
 The main feedback artifact is JSON at `test-results/pawn16-state.json`. Screenshots are saved locally for debugging and are ignored by Git.
+
+For targeted debugging, `state-debug` supports environment filters:
+
+```bash
+STATE_SEEDED_ONLY=1 make state-debug
+STATE_PIECE_TYPE=knight STATE_SIDE=black make state-debug
+STATE_TEXT=1 STATE_FILE_MIN=0 STATE_FILE_MAX=7 make state-debug
+STATE_VERIFY_UI=1 make state-debug
+```
 
 More implementation notes for Foundry v14 and Playwright are in `docs/foundry-v14-playwright-notes.md`.
 

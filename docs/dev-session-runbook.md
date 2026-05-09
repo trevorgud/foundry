@@ -138,8 +138,18 @@ make test-foundry-health # health-only Foundry smoke subset
 make test-foundry-rules  # rules-only Foundry smoke subset
 make test-foundry   # full Foundry Playwright suite
 make state          # structured state artifact
+make state-debug    # structured state artifact with filters/text/UI verify
 make screenshot     # browser screenshot artifact
 make dev-shell      # shell inside the Playwright test container
+```
+
+Examples:
+
+```bash
+STATE_SEEDED_ONLY=1 make state-debug
+STATE_PIECE_TYPE=pawn STATE_SIDE=white make state-debug
+STATE_TEXT=1 STATE_RANK_MIN=8 make state-debug
+STATE_VERIFY_UI=1 make state-debug
 ```
 
 ## Before Handing Back

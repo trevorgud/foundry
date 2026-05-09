@@ -10,6 +10,7 @@
     "test:foundry:health": "playwright test tests/foundry-smoke.spec.js --grep \"Pawn16 world is healthy\"",
     "test:foundry:rules": "playwright test tests/foundry-smoke.spec.js --grep \"Pawn16 piece rules\"",
     "foundry:state": "node scripts/foundry-state.mjs",
+    "foundry:state:debug": "node scripts/foundry-state.mjs",
     "foundry:screenshot": "node scripts/foundry-screenshot.mjs",
     "foundry:configure-world": "node scripts/configure-foundry.mjs"
   },
