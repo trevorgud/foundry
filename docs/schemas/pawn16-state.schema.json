@@ -9,6 +9,7 @@
     "generatedAt",
     "options",
     "health",
+    "turnState",
     "scene",
     "diagnostics",
     "tokens",
@@ -69,6 +70,17 @@
           "items": { "type": "string" }
         },
         "state": { "type": "object" }
+      }
+    },
+    "turnState": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["currentSide", "turnNumber", "movementUsed", "attackUsed"],
+      "properties": {
+        "currentSide": { "type": "string" },
+        "turnNumber": { "type": "number" },
+        "movementUsed": { "type": "boolean" },
+        "attackUsed": { "type": "boolean" }
       }
     },
     "scene": {

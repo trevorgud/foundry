@@ -4,6 +4,25 @@ import { generateLegalMoves, getMovementProfile, toLegacyMove } from "./movement
 export const SYSTEM_ID = "pawn16";
 export const BOARD_SIZE = 16;
 export const GRID_SIZE = 80;
+export const PIECE_TYPES = ["pawn", "knight", "bishop", "king"];
+export const BACK_RANK_LAYOUT = [
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "king",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop"
+];
 
 export function squareKey(file, rank) {
   return `${file},${rank}`;

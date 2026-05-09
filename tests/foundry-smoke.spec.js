@@ -60,34 +60,134 @@ test.describe("Pawn16 piece rules", () => {
 
   test("knight can move one or two orthogonal squares when path is clear", async ({ page }) => {
     await page.evaluate(async () => {
-      await game.pawn16.clearSquare(7, 14);
-      await game.pawn16.clearSquare(7, 13);
-      await game.pawn16.clearSquare(7, 12);
-      await game.pawn16.clearSquare(7, 1);
-      await game.pawn16.clearSquare(7, 2);
+      await game.pawn16.clearSquare(8, 14);
+      await game.pawn16.clearSquare(8, 13);
+      await game.pawn16.clearSquare(8, 12);
+      await game.pawn16.clearSquare(8, 1);
+      await game.pawn16.clearSquare(8, 2);
       await game.pawn16.clearSquare(6, 0);
-      await game.pawn16.clearSquare(5, 0);
-      await game.pawn16.clearSquare(8, 0);
+      await game.pawn16.clearSquare(7, 0);
       await game.pawn16.clearSquare(9, 0);
+      await game.pawn16.clearSquare(10, 0);
     });
 
-    const moves = await legalMovesForPiece(page, "knight", "black", 7);
-    expect(hasMove(moves, { file: 7, rank: 1, kind: "move" })).toBe(true);
-    expect(hasMove(moves, { file: 7, rank: 2, kind: "move" })).toBe(true);
+    const moves = await legalMovesForPiece(page, "knight", "black", 8);
+    expect(hasMove(moves, { file: 8, rank: 1, kind: "move" })).toBe(true);
+    expect(hasMove(moves, { file: 8, rank: 2, kind: "move" })).toBe(true);
+    expect(hasMove(moves, { file: 7, rank: 0, kind: "move" })).toBe(true);
     expect(hasMove(moves, { file: 6, rank: 0, kind: "move" })).toBe(true);
-    expect(hasMove(moves, { file: 5, rank: 0, kind: "move" })).toBe(true);
-    expect(hasMove(moves, { file: 8, rank: 0, kind: "move" })).toBe(true);
     expect(hasMove(moves, { file: 9, rank: 0, kind: "move" })).toBe(true);
+    expect(hasMove(moves, { file: 10, rank: 0, kind: "move" })).toBe(true);
   });
 
   test("knight two-square path is blocked by intervening piece", async ({ page }) => {
     await page.evaluate(async () => {
-      await game.pawn16.clearSquare(7, 2);
+      await game.pawn16.clearSquare(8, 2);
     });
 
-    const moves = await legalMovesForPiece(page, "knight", "black", 7);
-    expect(hasMove(moves, { file: 7, rank: 1, kind: "move" })).toBe(false);
-    expect(hasMove(moves, { file: 7, rank: 2, kind: "move" })).toBe(false);
+    const moves = await legalMovesForPiece(page, "knight", "black", 8);
+    expect(hasMove(moves, { file: 8, rank: 1, kind: "move" })).toBe(false);
+    expect(hasMove(moves, { file: 8, rank: 2, kind: "move" })).toBe(false);
+  });
+
+  test("pawn can attack one adjacent or diagonal enemy", async ({ page }) => {
+    await page.evaluate(async () => {
+      await game.pawn16.clearSquare(8, 14);
+      await game.pawn16.setPiecePosition("pawn", "black", 6, 6, 13, { hasMoved: true });
+      await game.pawn16.setPiecePosition("pawn", "black", 8, 8, 14, { hasMoved: true });
+    });
+
+    const attacks = await legalAttacksForPiece(page, "pawn", "white", 7);
+    expect(hasMove(attacks, { file: 6, rank: 13, kind: "attack" })).toBe(true);
+    expect(hasMove(attacks, { file: 8, rank: 14, kind: "attack" })).toBe(true);
+    expect(hasMove(attacks, { file: 7, rank: 12, kind: "attack" })).toBe(false);
+  });
+
+  test("bishop attacks two or three orthogonal squares but not one", async ({ page }) => {
+    await page.evaluate(async () => {
+      await game.pawn16.setPiecePosition("bishop", "white", 1, 7, 7, { hasMoved: true });
+      await game.pawn16.clearSquare(7, 6);
+      await game.pawn16.clearSquare(7, 5);
+      await game.pawn16.clearSquare(4, 7);
+      await game.pawn16.setPiecePosition("pawn", "black", 5, 7, 5, { hasMoved: true });
+      await game.pawn16.setPiecePosition("pawn", "black", 6, 4, 7, { hasMoved: true });
+      await game.pawn16.setPiecePosition("pawn", "black", 7, 7, 6, { hasMoved: true });
+    });
+
+    const attacks = await legalAttacksForPiece(page, "bishop", "white", 1);
+    expect(hasMove(attacks, { file: 7, rank: 6, kind: "attack" })).toBe(false);
+    expect(hasMove(attacks, { file: 7, rank: 5, kind: "attack" })).toBe(false);
+    expect(hasMove(attacks, { file: 4, rank: 7, kind: "attack" })).toBe(true);
+
+    await page.evaluate(async () => {
+      await game.pawn16.clearSquare(7, 6);
+    });
+
+    const unblockedAttacks = await legalAttacksForPiece(page, "bishop", "white", 1);
+    expect(hasMove(unblockedAttacks, { file: 7, rank: 5, kind: "attack" })).toBe(true);
+    expect(hasMove(unblockedAttacks, { file: 4, rank: 7, kind: "attack" })).toBe(true);
+  });
+
+  test("turn allows one movement and one attack before ending", async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      await game.pawn16.clearSquare(7, 13);
+      await game.pawn16.clearSquare(6, 13);
+      await game.pawn16.movePiece("pawn", "white", 7, 7, 13);
+
+      let secondMoveError = null;
+      try {
+        await game.pawn16.movePiece("pawn", "white", 6, 6, 13);
+      } catch (error) {
+        secondMoveError = error.message;
+      }
+
+      await game.pawn16.setPiecePosition("pawn", "black", 6, 6, 12, { hasMoved: true });
+      await game.pawn16.attackPiece("pawn", "white", 7, 6, 12);
+
+      let secondAttackError = null;
+      try {
+        await game.pawn16.attackPiece("pawn", "white", 7, 7, 12);
+      } catch (error) {
+        secondAttackError = error.message;
+      }
+
+      const beforeEnd = game.pawn16.turnState();
+      const afterEnd = await game.pawn16.endTurn();
+      return { secondMoveError, secondAttackError, beforeEnd, afterEnd };
+    });
+
+    expect(result.secondMoveError).toContain("already used movement");
+    expect(result.secondAttackError).toContain("already used an attack");
+    expect(result.beforeEnd).toMatchObject({
+      currentSide: "white",
+      turnNumber: 1,
+      movementUsed: true,
+      attackUsed: true
+    });
+    expect(result.afterEnd).toMatchObject({
+      currentSide: "black",
+      turnNumber: 1,
+      movementUsed: false,
+      attackUsed: false
+    });
+  });
+
+  test("king moves and attacks one orthogonal square only", async ({ page }) => {
+    await page.evaluate(async () => {
+      await game.pawn16.setPiecePosition("king", "white", 7, 7, 7, { hasMoved: true });
+      await game.pawn16.clearSquare(7, 6);
+      await game.pawn16.clearSquare(7, 5);
+      await game.pawn16.clearSquare(6, 0);
+      await game.pawn16.setPiecePosition("pawn", "black", 6, 7, 6, { hasMoved: true });
+      await game.pawn16.setPiecePosition("pawn", "black", 5, 7, 5, { hasMoved: true });
+    });
+
+    const moves = await legalMovesForPiece(page, "king", "white", 7);
+    const attacks = await legalAttacksForPiece(page, "king", "white", 7);
+    expect(hasMove(moves, { file: 7, rank: 6, kind: "move" })).toBe(false);
+    expect(hasMove(moves, { file: 6, rank: 7, kind: "move" })).toBe(true);
+    expect(hasMove(attacks, { file: 7, rank: 6, kind: "attack" })).toBe(true);
+    expect(hasMove(attacks, { file: 7, rank: 5, kind: "attack" })).toBe(false);
   });
 });
 
@@ -98,6 +198,12 @@ async function legalMovesForPawn(page, side, file) {
 async function legalMovesForPiece(page, type, side, file) {
   return page.evaluate(({ typeValue, sideValue, fileValue }) => {
     return game.pawn16.legalMovesForPiece(typeValue, sideValue, fileValue);
+  }, { typeValue: type, sideValue: side, fileValue: file });
+}
+
+async function legalAttacksForPiece(page, type, side, file) {
+  return page.evaluate(({ typeValue, sideValue, fileValue }) => {
+    return game.pawn16.legalAttacksForPiece(typeValue, sideValue, fileValue);
   }, { typeValue: type, sideValue: side, fileValue: file });
 }
 

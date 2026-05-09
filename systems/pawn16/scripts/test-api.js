@@ -1,6 +1,8 @@
 import {
   BOARD_SIZE,
+  BACK_RANK_LAYOUT,
   GRID_SIZE,
+  PIECE_TYPES,
   SYSTEM_ID,
   isOnBoard,
   pixelToSquare,
@@ -8,31 +10,31 @@ import {
   startingRank
 } from "./rules.js";
 import { positionFromScene, pieceFromToken } from "./movement-adapters.js";
-import { generateLegalMoves, getMovementProfile, toLegacyMove } from "./movement-engine.js";
+import { generateLegalAttacks, generateLegalMoves, getMovementProfile, toLegacyMove } from "./movement-engine.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
+const BACK_RANK_COUNTS = BACK_RANK_LAYOUT.reduce((counts, type) => {
+  counts[type] = (counts[type] ?? 0) + 1;
+  return counts;
+}, {});
 
 export function testState() {
   const scene = game.scenes.getName(BOARD_SCENE_NAME) ?? canvas.scene ?? null;
   const tokens = scene ? Array.from(scene.tokens) : [];
   const pieceTokens = tokens.filter(isPawn16PieceToken);
-  const pawnTokens = pieceTokens.filter(token => token.getFlag(SYSTEM_ID, "pieceType") === "pawn");
-  const knightTokens = pieceTokens.filter(token => token.getFlag(SYSTEM_ID, "pieceType") === "knight");
+  const tokensByType = {};
+  for (const type of PIECE_TYPES) {
+    tokensByType[type] = pieceTokens.filter(token => token.getFlag(SYSTEM_ID, "pieceType") === type);
+  }
   const boardTiles = scene
     ? scene.tiles.filter(tile => tile.getFlag(SYSTEM_ID, "kind") === "board-image")
     : [];
 
   const pieces = {
-    pawns: {
-      white: summarizePieceSide(pawnTokens, "white", startingRank("white")),
-      black: summarizePieceSide(pawnTokens, "black", startingRank("black")),
-      count: pawnTokens.length
-    },
-    knights: {
-      white: summarizePieceSide(knightTokens, "white", BOARD_SIZE - 1),
-      black: summarizePieceSide(knightTokens, "black", 0),
-      count: knightTokens.length
-    },
+    pawns: summarizePieceType(tokensByType.pawn, "pawn"),
+    knights: summarizePieceType(tokensByType.knight, "knight"),
+    bishops: summarizePieceType(tokensByType.bishop, "bishop"),
+    kings: summarizePieceType(tokensByType.king, "king"),
     rotated: pieceTokens.filter(token => token.rotation !== 0).length,
     unlockedRotation: pieceTokens.filter(token => token.lockRotation !== true).length,
     unlinked: pieceTokens.filter(token => token.actorLink !== true).length
@@ -62,8 +64,10 @@ export function testState() {
       boardImageTiles: boardTiles.length,
       tokens: scene.tokens.size,
       pieceTokens: pieceTokens.length,
-      pawnTokens: pawnTokens.length,
-      knightTokens: knightTokens.length
+      pawnTokens: tokensByType.pawn.length,
+      knightTokens: tokensByType.knight.length,
+      bishopTokens: tokensByType.bishop.length,
+      kingTokens: tokensByType.king.length
     } : null,
     pieces
   };
@@ -90,17 +94,19 @@ export function assertHealthy() {
     if (state.scene.boardImageTiles !== 0) issues.push(`Expected no seeded board image tiles, got ${state.scene.boardImageTiles}.`);
     if (state.scene.pieceTokens !== 64) issues.push(`Expected 64 seeded piece tokens, got ${state.scene.pieceTokens}.`);
     if (state.scene.pawnTokens !== 32) issues.push(`Expected 32 pawn tokens, got ${state.scene.pawnTokens}.`);
-    if (state.scene.knightTokens !== 32) issues.push(`Expected 32 knight tokens, got ${state.scene.knightTokens}.`);
+    if (state.scene.knightTokens !== 16) issues.push(`Expected 16 knight tokens, got ${state.scene.knightTokens}.`);
+    if (state.scene.bishopTokens !== 14) issues.push(`Expected 14 bishop tokens, got ${state.scene.bishopTokens}.`);
+    if (state.scene.kingTokens !== 2) issues.push(`Expected 2 king tokens, got ${state.scene.kingTokens}.`);
   }
 
-  if (state.pieces.pawns.white.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} white pawns, got ${state.pieces.pawns.white.count}.`);
-  if (state.pieces.pawns.black.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} black pawns, got ${state.pieces.pawns.black.count}.`);
-  if (state.pieces.knights.white.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} white knights, got ${state.pieces.knights.white.count}.`);
-  if (state.pieces.knights.black.count !== BOARD_SIZE) issues.push(`Expected ${BOARD_SIZE} black knights, got ${state.pieces.knights.black.count}.`);
-  if (state.pieces.pawns.white.unexpectedRanks.length) issues.push(`White pawns on unexpected ranks: ${state.pieces.pawns.white.unexpectedRanks.join(", ")}.`);
-  if (state.pieces.pawns.black.unexpectedRanks.length) issues.push(`Black pawns on unexpected ranks: ${state.pieces.pawns.black.unexpectedRanks.join(", ")}.`);
-  if (state.pieces.knights.white.unexpectedRanks.length) issues.push(`White knights on unexpected ranks: ${state.pieces.knights.white.unexpectedRanks.join(", ")}.`);
-  if (state.pieces.knights.black.unexpectedRanks.length) issues.push(`Black knights on unexpected ranks: ${state.pieces.knights.black.unexpectedRanks.join(", ")}.`);
+  for (const type of PIECE_TYPES) {
+    const summary = pieceSummaryForState(state, type);
+    const expectedPerSide = expectedPieceCountPerSide(type);
+    if (summary.white.count !== expectedPerSide) issues.push(`Expected ${expectedPerSide} white ${type} pieces, got ${summary.white.count}.`);
+    if (summary.black.count !== expectedPerSide) issues.push(`Expected ${expectedPerSide} black ${type} pieces, got ${summary.black.count}.`);
+    if (summary.white.unexpectedRanks.length) issues.push(`White ${type} pieces on unexpected ranks: ${summary.white.unexpectedRanks.join(", ")}.`);
+    if (summary.black.unexpectedRanks.length) issues.push(`Black ${type} pieces on unexpected ranks: ${summary.black.unexpectedRanks.join(", ")}.`);
+  }
   if (state.pieces.rotated !== 0) issues.push(`Expected no rotated pieces, got ${state.pieces.rotated}.`);
   if (state.pieces.unlockedRotation !== 0) issues.push(`Expected no pieces with unlocked rotation, got ${state.pieces.unlockedRotation}.`);
   if (state.pieces.unlinked !== 0) issues.push(`Expected no unlinked piece tokens, got ${state.pieces.unlinked}.`);
@@ -123,6 +129,14 @@ export function legalMovesForPawn(side, file) {
 }
 
 export function legalMovesForPiece(type, side, file) {
+  return legalActionsForPiece(type, side, file, "move");
+}
+
+export function legalAttacksForPiece(type, side, file) {
+  return legalActionsForPiece(type, side, file, "attack");
+}
+
+function legalActionsForPiece(type, side, file, actionType) {
   const scene = getBoardScene();
   const token = findPieceToken(scene, type, side, file);
   if (!token) return [];
@@ -131,7 +145,10 @@ export function legalMovesForPiece(type, side, file) {
   position.occupancy.delete(`${token.actor.system.file},${token.actor.system.rank}`);
   const profile = getMovementProfile(type);
   const piece = pieceFromToken(token);
-  return generateLegalMoves(position, piece, profile).map(toLegacyMove);
+  const actions = actionType === "attack"
+    ? generateLegalAttacks(position, piece, profile)
+    : generateLegalMoves(position, piece, profile);
+  return actions.map(toLegacyMove);
 }
 
 export async function setPawnPosition(side, file, targetFile, targetRank, { hasMoved } = {}) {
@@ -186,7 +203,15 @@ export async function clearSquare(file, rank) {
   return tokens.length;
 }
 
-function summarizePieceSide(tokens, side, expectedRank) {
+function summarizePieceType(tokens, type) {
+  return {
+    white: summarizePieceSide(tokens, "white", expectedRank(type, "white")),
+    black: summarizePieceSide(tokens, "black", expectedRank(type, "black")),
+    count: tokens.length
+  };
+}
+
+function summarizePieceSide(tokens, side, expectedRankValue) {
   const sideTokens = tokens.filter(token => token.actor?.system?.side === side);
   const ranks = {};
   const unexpectedRanks = new Set();
@@ -194,15 +219,30 @@ function summarizePieceSide(tokens, side, expectedRank) {
   for (const token of sideTokens) {
     const { rank } = pixelToSquare(token.x, token.y);
     ranks[rank] = (ranks[rank] ?? 0) + 1;
-    if (rank !== expectedRank) unexpectedRanks.add(rank);
+    if (rank !== expectedRankValue) unexpectedRanks.add(rank);
   }
 
   return {
     count: sideTokens.length,
-    expectedRank,
+    expectedRank: expectedRankValue,
     ranks,
     unexpectedRanks: Array.from(unexpectedRanks).sort((a, b) => a - b)
   };
+}
+
+function expectedRank(type, side) {
+  return type === "pawn"
+    ? startingRank(side)
+    : (side === "white" ? BOARD_SIZE - 1 : 0);
+}
+
+function expectedPieceCountPerSide(type) {
+  return type === "pawn" ? BOARD_SIZE : (BACK_RANK_COUNTS[type] ?? 0);
+}
+
+function pieceSummaryForState(state, type) {
+  const plural = type === "bishop" ? "bishops" : `${type}s`;
+  return state.pieces[plural];
 }
 
 function getBoardScene() {

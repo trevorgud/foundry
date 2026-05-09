@@ -1,7 +1,7 @@
 import { PawnDataModel } from "./data-models.js";
 import { SYSTEM_ID, legalPawnMoves } from "./rules.js";
-import { moveSelectedPawnForward, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
-import { assertHealthy, clearSquare, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, testState, unpause } from "./test-api.js";
+import { attackPiece, attackSelectedPiece, endTurn, getTurnState, movePiece, moveSelectedPawnForward, moveSelectedPiece, resetPawn16Board, seedPawn16World, syncPawnStateFromToken } from "./seed.js";
+import { assertHealthy, clearSquare, legalAttacksForPiece, legalMovesForPawn, legalMovesForPiece, setPawnPosition, setPiecePosition, testState, unpause } from "./test-api.js";
 
 Hooks.once("init", () => {
   console.info("Pawn16 | Initializing");
@@ -9,6 +9,8 @@ Hooks.once("init", () => {
   CONFIG.Actor.dataModels ??= {};
   CONFIG.Actor.dataModels.pawn = PawnDataModel;
   CONFIG.Actor.dataModels.knight = PawnDataModel;
+  CONFIG.Actor.dataModels.bishop = PawnDataModel;
+  CONFIG.Actor.dataModels.king = PawnDataModel;
 
   game.settings.register(SYSTEM_ID, "autoSeed", {
     name: "PAWN16.Settings.AutoSeed.Name",
@@ -23,9 +25,16 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
   game.pawn16 = {
     assertHealthy,
+    attackPiece,
+    attackSelectedPiece,
+    endTurn,
+    movePiece,
     moveSelectedPawnForward,
+    moveSelectedPiece,
     resetBoard: resetPawn16Board,
     seedWorld: seedPawn16World,
+    turnState: getTurnState,
+    legalAttacksForPiece,
     legalMovesForPawn,
     legalMovesForPiece,
     setPawnPosition,
@@ -54,14 +63,33 @@ Hooks.on("getSceneControlButtons", controls => {
     icon: "fa-solid fa-chess-pawn",
     order,
     button: true,
-    onChange: () => moveSelectedPawnForward()
+    onChange: () => moveSelectedPiece()
+  };
+
+  tokenControls.tools.pawn16Attack = {
+    name: "pawn16Attack",
+    title: "PAWN16.Controls.Attack",
+    icon: "fa-solid fa-hand-fist",
+    order: order + 1,
+    button: true,
+    onChange: () => attackSelectedPiece()
+  };
+
+  tokenControls.tools.pawn16EndTurn = {
+    name: "pawn16EndTurn",
+    title: "PAWN16.Controls.EndTurn",
+    icon: "fa-solid fa-hourglass-half",
+    order: order + 2,
+    button: true,
+    visible: game.user.isGM,
+    onChange: () => endTurn()
   };
 
   tokenControls.tools.pawn16Reset = {
     name: "pawn16Reset",
     title: "PAWN16.Controls.Reset",
     icon: "fa-solid fa-rotate-left",
-    order: order + 1,
+    order: order + 3,
     button: true,
     visible: game.user.isGM,
     onChange: () => resetPawn16Board()

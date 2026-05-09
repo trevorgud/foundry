@@ -1,5 +1,6 @@
 import {
   BOARD_SIZE,
+  BACK_RANK_LAYOUT,
   GRID_SIZE,
   SYSTEM_ID,
   pixelToSquare,
@@ -7,22 +8,38 @@ import {
   startingRank
 } from "./rules.js";
 import { positionFromScene, pieceFromToken } from "./movement-adapters.js";
-import { generateLegalMoves, getMovementProfile } from "./movement-engine.js";
+import { generateLegalAttacks, generateLegalMoves, getMovementProfile } from "./movement-engine.js";
 
 const BOARD_SCENE_NAME = "Pawn16 Board";
+const TURN_STATE_FLAG = "turnState";
 const WHITE_PAWN_ASSET = "systems/pawn16/assets/white-pawn.svg";
 const BLACK_PAWN_ASSET = "systems/pawn16/assets/black-pawn.svg";
 const WHITE_KNIGHT_ASSET = "systems/pawn16/assets/white-knight.svg";
 const BLACK_KNIGHT_ASSET = "systems/pawn16/assets/black-knight.svg";
+const WHITE_BISHOP_ASSET = "systems/pawn16/assets/white-bishop.svg";
+const BLACK_BISHOP_ASSET = "systems/pawn16/assets/black-bishop.svg";
+const WHITE_KING_ASSET = "systems/pawn16/assets/white-king.svg";
+const BLACK_KING_ASSET = "systems/pawn16/assets/black-king.svg";
+
+let seedPromise = null;
 
 export async function seedPawn16World() {
   if (game.system.id !== SYSTEM_ID || !game.user.isGM) return;
   if (!game.settings.get(SYSTEM_ID, "autoSeed")) return;
 
+  if (seedPromise) return seedPromise;
+  seedPromise = seedPawn16WorldUnlocked().finally(() => {
+    seedPromise = null;
+  });
+  return seedPromise;
+}
+
+async function seedPawn16WorldUnlocked() {
   const scene = await ensureBoardScene();
   const actors = await ensurePieceActors();
   await removeBoardTiles(scene);
   await ensurePieceTokens(scene, actors);
+  await ensureTurnState(scene);
   await ensureMacros();
   unpauseGame();
 
@@ -31,6 +48,8 @@ export async function seedPawn16World() {
 }
 
 export async function resetPawn16Board() {
+  if (seedPromise) await seedPromise;
+
   if (!game.user.isGM) {
     ui.notifications.warn("Only a GM can reset the Pawn16 board.");
     return;
@@ -50,12 +69,17 @@ export async function resetPawn16Board() {
   const actors = await ensurePieceActors({ reset: true });
   await removeBoardTiles(scene);
   await ensurePieceTokens(scene, actors);
+  await ensureTurnState(scene, { reset: true });
   unpauseGame();
   if (!scene.active) await scene.activate();
   ui.notifications.info("Pawn16 board reset.");
 }
 
 export async function moveSelectedPawnForward() {
+  return moveSelectedPiece();
+}
+
+export async function moveSelectedPiece() {
   const controlled = canvas.tokens?.controlled ?? [];
   if (controlled.length !== 1) {
     ui.notifications.warn("Select exactly one Pawn16 piece.");
@@ -64,43 +88,112 @@ export async function moveSelectedPawnForward() {
 
   const token = controlled[0];
   const actor = token.actor;
-  if (actor?.type !== "pawn") {
+  if (!token.document.getFlag(SYSTEM_ID, "seedId")) {
     ui.notifications.warn("The selected token is not a Pawn16 piece.");
     return;
   }
 
-  const from = {
-    file: actor.system.file,
-    rank: actor.system.rank
-  };
-  const position = positionFromScene(canvas.scene);
-  position.occupancy.delete(`${from.file},${from.rank}`);
-  const piece = pieceFromToken(token.document);
-  const profile = getMovementProfile(piece.type);
-  const moves = generateLegalMoves(position, piece, profile);
-  const move = choosePreferredMove(moves, actor.system.side);
+  const turnState = getTurnState();
+  if (!canUseAction(actor.system.side, "move", turnState)) return;
+
+  const moves = legalActionsForToken(token.document, "move");
+  const move = choosePreferredAction(moves, actor.system.side);
 
   if (!move) {
     ui.notifications.warn("That piece has no legal move.");
     return;
   }
 
-  const pixel = squareToPixel(move.to.file, move.to.rank);
-  await token.document.update({
-    ...pixel,
-    rotation: 0,
-    lockRotation: true
-  });
-  await actor.update({
-    "system.file": move.to.file,
-    "system.rank": move.to.rank,
-    "system.hasMoved": true
-  });
+  await applyMove(token.document, move);
+  await markActionUsed(canvas.scene, "move");
+}
+
+export async function attackSelectedPiece() {
+  const controlled = canvas.tokens?.controlled ?? [];
+  if (controlled.length !== 1) {
+    ui.notifications.warn("Select exactly one Pawn16 piece.");
+    return;
+  }
+
+  const token = controlled[0];
+  const actor = token.actor;
+  if (!token.document.getFlag(SYSTEM_ID, "seedId")) {
+    ui.notifications.warn("The selected token is not a Pawn16 piece.");
+    return;
+  }
+
+  const turnState = getTurnState();
+  if (!canUseAction(actor.system.side, "attack", turnState)) return;
+
+  const attacks = legalActionsForToken(token.document, "attack");
+  const attack = choosePreferredAction(attacks, actor.system.side);
+  if (!attack) {
+    ui.notifications.warn("That piece has no legal attack.");
+    return;
+  }
+
+  await applyAttack(canvas.scene, attack);
+  await markActionUsed(canvas.scene, "attack");
+}
+
+export async function movePiece(type, side, file, targetFile, targetRank) {
+  if (!game.user.isGM) throw new Error("Only a GM can move Pawn16 pieces.");
+  const scene = findBoardScene();
+  const token = findPieceToken(scene, type, side, file);
+  if (!token) throw new Error(`Piece ${type}-${side}-${file} was not found on the board.`);
+  if (!canUseAction(side, "move", getTurnState(scene), { notify: false })) {
+    throw new Error(`${capitalize(side)} has already used movement this turn.`);
+  }
+
+  const move = legalActionsForToken(token, "move")
+    .find(action => action.to.file === targetFile && action.to.rank === targetRank);
+  if (!move) throw new Error(`Illegal move for ${type}-${side}-${file} to ${targetFile},${targetRank}.`);
+
+  await applyMove(token, move);
+  await markActionUsed(scene, "move");
+  return move;
+}
+
+export async function attackPiece(type, side, file, targetFile, targetRank) {
+  if (!game.user.isGM) throw new Error("Only a GM can attack with Pawn16 pieces.");
+  const scene = findBoardScene();
+  const token = findPieceToken(scene, type, side, file);
+  if (!token) throw new Error(`Piece ${type}-${side}-${file} was not found on the board.`);
+  if (!canUseAction(side, "attack", getTurnState(scene), { notify: false })) {
+    throw new Error(`${capitalize(side)} has already used an attack this turn.`);
+  }
+
+  const attack = legalActionsForToken(token, "attack")
+    .find(action => action.to.file === targetFile && action.to.rank === targetRank);
+  if (!attack) throw new Error(`Illegal attack for ${type}-${side}-${file} at ${targetFile},${targetRank}.`);
+
+  await applyAttack(scene, attack);
+  await markActionUsed(scene, "attack");
+  return attack;
+}
+
+export function getTurnState(scene = findBoardScene()) {
+  return scene?.getFlag(SYSTEM_ID, TURN_STATE_FLAG) ?? initialTurnState();
+}
+
+export async function endTurn() {
+  if (!game.user.isGM) throw new Error("Only a GM can end Pawn16 turns.");
+  const scene = findBoardScene();
+  const state = getTurnState(scene);
+  const nextSide = state.currentSide === "white" ? "black" : "white";
+  const nextTurn = state.currentSide === "black" ? state.turnNumber + 1 : state.turnNumber;
+  const nextState = {
+    currentSide: nextSide,
+    turnNumber: nextTurn,
+    movementUsed: false,
+    attackUsed: false
+  };
+  await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, nextState);
+  return nextState;
 }
 
 export async function syncPawnStateFromToken(tokenDocument, changed = {}) {
   if (!game.user.isGM) return;
-  if (tokenDocument.actor?.type !== "pawn") return;
   if (!tokenDocument.getFlag(SYSTEM_ID, "seedId")) return;
   if (!("x" in changed || "y" in changed || "rotation" in changed || "lockRotation" in changed)) return;
 
@@ -189,22 +282,21 @@ async function ensurePieceActors({ reset = false } = {}) {
 
   for (const config of pieceSeedConfigs()) {
     for (const side of ["white", "black"]) {
-      for (let file = 0; file < BOARD_SIZE; file += 1) {
-        const seedId = pieceSeedId(config.type, side, file);
-        const rank = config.rankForSide(side);
-        const name = `${capitalize(side)} ${capitalize(config.type)} ${file + 1}`;
-        const img = config.assetForSide(side);
+      for (const slot of config.slotsForSide(side)) {
+        const seedId = pieceSeedId(slot.type, side, slot.file);
+        const name = `${capitalize(side)} ${capitalize(slot.type)} ${slot.file + 1}`;
+        const img = assetForPiece(slot.type, side);
         const disposition = side === "white"
           ? CONST.TOKEN_DISPOSITIONS.FRIENDLY
           : CONST.TOKEN_DISPOSITIONS.HOSTILE;
         const data = {
           name,
-          type: "pawn",
+          type: slot.type,
           img,
           system: {
             side,
-            file,
-            rank,
+            file: slot.file,
+            rank: slot.rank,
             hasMoved: false
           },
           prototypeToken: {
@@ -221,8 +313,8 @@ async function ensurePieceActors({ reset = false } = {}) {
             [SYSTEM_ID]: {
               seedId,
               side,
-              file,
-              pieceType: config.type
+              file: slot.file,
+              pieceType: slot.type
             }
           }
         };
@@ -255,7 +347,11 @@ async function ensurePieceTokens(scene, actors) {
   for (const actor of actors) {
     const seedId = actor.getFlag(SYSTEM_ID, "seedId");
     const pieceType = actor.getFlag(SYSTEM_ID, "pieceType") ?? "pawn";
-    const existing = scene.tokens.find(token => token.getFlag(SYSTEM_ID, "seedId") === seedId);
+    const existingTokens = scene.tokens.filter(token => token.getFlag(SYSTEM_ID, "seedId") === seedId);
+    const existing = existingTokens[0] ?? null;
+    if (existingTokens.length > 1) {
+      await scene.deleteEmbeddedDocuments("Token", existingTokens.slice(1).map(token => token.id));
+    }
     if (existing) {
       const updates = {};
       if (existing.rotation !== 0) updates.rotation = 0;
@@ -294,8 +390,18 @@ async function ensurePieceTokens(scene, actors) {
 async function ensureMacros() {
   await ensureMacro(
     "Pawn16: Move Selected Piece",
-    "game.pawn16.moveSelectedPawnForward();",
+    "game.pawn16.moveSelectedPiece();",
     "icons/svg/upgrade.svg"
+  );
+  await ensureMacro(
+    "Pawn16: Attack Selected Piece",
+    "game.pawn16.attackSelectedPiece();",
+    "icons/svg/sword.svg"
+  );
+  await ensureMacro(
+    "Pawn16: End Turn",
+    "game.pawn16.endTurn();",
+    "icons/svg/clockwork.svg"
   );
   await ensureMacro(
     "Pawn16: Reset Board",
@@ -306,7 +412,12 @@ async function ensureMacros() {
 
 async function ensureMacro(name, command, img) {
   const existing = game.macros.getName(name);
-  if (existing) return existing;
+  if (existing) {
+    const updates = {};
+    if (existing.command !== command) updates.command = command;
+    if (existing.img !== img) updates.img = img;
+    return Object.keys(updates).length ? existing.update(updates) : existing;
+  }
 
   return Macro.create({
     name,
@@ -329,26 +440,132 @@ function pieceSeedId(type, side, file) {
   return `${type}-${side}-${file}`;
 }
 
+function findPieceToken(scene, type, side, file) {
+  const seedId = pieceSeedId(type, side, file);
+  return scene?.tokens.find(token => token.getFlag(SYSTEM_ID, "seedId") === seedId) ?? null;
+}
+
 function pieceSeedConfigs() {
   return [
     {
-      type: "pawn",
-      rankForSide: side => startingRank(side),
-      assetForSide: side => (side === "white" ? WHITE_PAWN_ASSET : BLACK_PAWN_ASSET)
+      slotsForSide: side => {
+        const rank = startingRank(side);
+        return Array.from({ length: BOARD_SIZE }, (_value, file) => ({ type: "pawn", file, rank }));
+      }
     },
     {
-      type: "knight",
-      rankForSide: side => (side === "white" ? BOARD_SIZE - 1 : 0),
-      assetForSide: side => (side === "white" ? WHITE_KNIGHT_ASSET : BLACK_KNIGHT_ASSET)
+      slotsForSide: side => {
+        const rank = side === "white" ? BOARD_SIZE - 1 : 0;
+        return BACK_RANK_LAYOUT.map((type, file) => ({ type, file, rank }));
+      }
     }
   ];
 }
 
-function choosePreferredMove(moves, side) {
-  const legalMoves = moves.filter(candidate => candidate.kind === "move");
-  if (!legalMoves.length) return null;
+function assetForPiece(type, side) {
+  const assets = {
+    pawn: {
+      white: WHITE_PAWN_ASSET,
+      black: BLACK_PAWN_ASSET
+    },
+    knight: {
+      white: WHITE_KNIGHT_ASSET,
+      black: BLACK_KNIGHT_ASSET
+    },
+    bishop: {
+      white: WHITE_BISHOP_ASSET,
+      black: BLACK_BISHOP_ASSET
+    },
+    king: {
+      white: WHITE_KING_ASSET,
+      black: BLACK_KING_ASSET
+    }
+  };
+  return assets[type]?.[side] ?? WHITE_PAWN_ASSET;
+}
 
-  const ordered = [...legalMoves].sort((a, b) => {
+function legalActionsForToken(tokenDocument, actionType) {
+  const scene = tokenDocument.parent ?? canvas.scene;
+  const from = {
+    file: tokenDocument.actor.system.file,
+    rank: tokenDocument.actor.system.rank
+  };
+  const position = positionFromScene(scene);
+  position.occupancy.delete(`${from.file},${from.rank}`);
+  const piece = pieceFromToken(tokenDocument);
+  const profile = getMovementProfile(piece.type);
+  return actionType === "attack"
+    ? generateLegalAttacks(position, piece, profile)
+    : generateLegalMoves(position, piece, profile);
+}
+
+async function applyMove(tokenDocument, move) {
+  const pixel = squareToPixel(move.to.file, move.to.rank);
+  await tokenDocument.update({
+    ...pixel,
+    rotation: 0,
+    lockRotation: true
+  });
+  await tokenDocument.actor.update({
+    "system.file": move.to.file,
+    "system.rank": move.to.rank,
+    "system.hasMoved": true
+  });
+}
+
+async function applyAttack(scene, attack) {
+  const tokenId = attack.capture?.tokenId;
+  if (!tokenId) throw new Error("Attack has no captured token.");
+  await scene.deleteEmbeddedDocuments("Token", [tokenId]);
+}
+
+async function ensureTurnState(scene, { reset = false } = {}) {
+  if (reset || !scene.getFlag(SYSTEM_ID, TURN_STATE_FLAG)) {
+    await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, initialTurnState());
+  }
+}
+
+function initialTurnState() {
+  return {
+    currentSide: "white",
+    turnNumber: 1,
+    movementUsed: false,
+    attackUsed: false
+  };
+}
+
+function canUseAction(side, actionType, state, { notify = true } = {}) {
+  if (state.currentSide !== side) {
+    if (notify) ui.notifications.warn(`It is ${state.currentSide}'s turn.`);
+    return false;
+  }
+
+  if (actionType === "move" && state.movementUsed) {
+    if (notify) ui.notifications.warn("Movement has already been used this turn.");
+    return false;
+  }
+
+  if (actionType === "attack" && state.attackUsed) {
+    if (notify) ui.notifications.warn("Attack has already been used this turn.");
+    return false;
+  }
+
+  return true;
+}
+
+async function markActionUsed(scene, actionType) {
+  const state = getTurnState(scene);
+  await scene.setFlag(SYSTEM_ID, TURN_STATE_FLAG, {
+    ...state,
+    movementUsed: state.movementUsed || actionType === "move",
+    attackUsed: state.attackUsed || actionType === "attack"
+  });
+}
+
+function choosePreferredAction(actions, side) {
+  if (!actions.length) return null;
+
+  const ordered = [...actions].sort((a, b) => {
     const directionScore = directionPriority(a.direction, side) - directionPriority(b.direction, side);
     if (directionScore !== 0) return directionScore;
     if (a.distance !== b.distance) return a.distance - b.distance;

@@ -2,6 +2,25 @@ import { chromium } from "@playwright/test";
 import fs from "node:fs/promises";
 
 const SCHEMA_VERSION = "1.0.0";
+const PIECE_TYPES = ["pawn", "knight", "bishop", "king"];
+const BACK_RANK_LAYOUT = [
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "king",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop",
+  "knight",
+  "bishop"
+];
 const baseURL = process.env.FOUNDRY_URL ?? "http://localhost:30000";
 const output = process.env.FOUNDRY_STATE_OUTPUT ?? "test-results/pawn16-state.json";
 const options = {
@@ -97,6 +116,7 @@ try {
 
     return {
       health: healthy,
+      turnState: game.pawn16.turnState?.() ?? null,
       scene: scene ? {
         name: scene.name,
         width: scene.width,
@@ -118,6 +138,7 @@ try {
     generatedAt: new Date().toISOString(),
     options,
     health: snapshot.health,
+    turnState: snapshot.turnState,
     scene: snapshot.scene,
     diagnostics: {
       seed: diagnostics,
@@ -221,7 +242,7 @@ function seededDiagnostics(tokens, boardSize) {
     count: extraCount + 1
   }));
   const unseededPieceTokens = tokens
-    .filter(token => ["pawn", "knight"].includes(token.pieceType) && !token.seedId)
+    .filter(token => PIECE_TYPES.includes(token.pieceType) && !token.seedId)
     .map(token => ({
       id: token.id,
       name: token.name,
@@ -247,11 +268,12 @@ function seededDiagnostics(tokens, boardSize) {
 function expectedSeedIds(boardSize) {
   const size = Number.isFinite(boardSize) && boardSize > 0 ? boardSize : 16;
   const expected = [];
-  for (const pieceType of ["pawn", "knight"]) {
-    for (const side of ["white", "black"]) {
-      for (let file = 0; file < size; file += 1) {
-        expected.push(`${pieceType}-${side}-${file}`);
-      }
+  for (const side of ["white", "black"]) {
+    for (let file = 0; file < size; file += 1) {
+      expected.push(`pawn-${side}-${file}`);
+    }
+    for (let file = 0; file < Math.min(size, BACK_RANK_LAYOUT.length); file += 1) {
+      expected.push(`${BACK_RANK_LAYOUT[file]}-${side}-${file}`);
     }
   }
   return expected;
@@ -269,7 +291,7 @@ function renderBoardText(tokens, boardSize) {
 
   const lines = [];
   lines.push("Board (top = highest rank)");
-  lines.push("Legend: WP=white pawn, BP=black pawn, WK=white knight, BK=black knight, ..=empty, *N=stacked");
+  lines.push("Legend: WP/BP=pawn, WN/BN=knight, WB/BB=bishop, WK/BK=king, ..=empty, *N=stacked");
   lines.push("");
 
   for (let rank = size - 1; rank >= 0; rank -= 1) {
@@ -292,6 +314,11 @@ function cellToken(stack) {
   if (stack.length > 1) return `*${stack.length}`;
   const token = stack[0];
   const side = token.side === "white" ? "W" : "B";
-  const type = token.pieceType === "knight" ? "K" : "P";
+  const type = {
+    pawn: "P",
+    knight: "N",
+    bishop: "B",
+    king: "K"
+  }[token.pieceType] ?? "?";
   return `${side}${type}`;
 }

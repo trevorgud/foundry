@@ -1,18 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "ok": true,
-  "generatedAt": "2026-05-09T18:55:44.623Z",
+  "generatedAt": "2026-05-09T19:21:08.493Z",
   "options": {
     "reset": true,
     "seededOnly": true,
     "side": "black",
-    "pieceType": "knight",
+    "pieceType": null,
     "movedOnly": false,
     "fileMin": null,
     "fileMax": null,
     "rankMin": null,
-    "rankMax": null,
-    "text": false,
+    "rankMax": 0,
+    "text": true,
     "verifyUi": false,
     "strict": true
   },
@@ -44,7 +44,9 @@
         "tokens": 64,
         "pieceTokens": 64,
         "pawnTokens": 32,
-        "knightTokens": 32
+        "knightTokens": 16,
+        "bishopTokens": 14,
+        "kingTokens": 2
       },
       "pieces": {
         "pawns": {
@@ -68,28 +70,72 @@
         },
         "knights": {
           "white": {
-            "count": 16,
+            "count": 8,
             "expectedRank": 15,
             "ranks": {
-              "15": 16
+              "15": 8
             },
             "unexpectedRanks": []
           },
           "black": {
-            "count": 16,
+            "count": 8,
             "expectedRank": 0,
             "ranks": {
-              "0": 16
+              "0": 8
             },
             "unexpectedRanks": []
           },
-          "count": 32
+          "count": 16
+        },
+        "bishops": {
+          "white": {
+            "count": 7,
+            "expectedRank": 15,
+            "ranks": {
+              "15": 7
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 7,
+            "expectedRank": 0,
+            "ranks": {
+              "0": 7
+            },
+            "unexpectedRanks": []
+          },
+          "count": 14
+        },
+        "kings": {
+          "white": {
+            "count": 1,
+            "expectedRank": 15,
+            "ranks": {
+              "15": 1
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 1,
+            "expectedRank": 0,
+            "ranks": {
+              "0": 1
+            },
+            "unexpectedRanks": []
+          },
+          "count": 2
         },
         "rotated": 0,
         "unlockedRotation": 0,
         "unlinked": 0
       }
     }
+  },
+  "turnState": {
+    "currentSide": "white",
+    "turnNumber": 1,
+    "movementUsed": false,
+    "attackUsed": false
   },
   "scene": {
     "name": "Pawn16 Board",
@@ -106,7 +152,9 @@
       "seededCounts": {
         "byPieceType": {
           "pawn": 32,
-          "knight": 32
+          "knight": 16,
+          "bishop": 14,
+          "king": 2
         },
         "bySide": {
           "white": 32,
@@ -121,7 +169,7 @@
   },
   "tokens": [
     {
-      "id": "Kp2DpckLmwhtVczc",
+      "id": "6EYuV31tSQ01G7N1",
       "name": "Black Knight 1",
       "seedId": "knight-black-0",
       "pieceType": "knight",
@@ -137,23 +185,23 @@
       "rotation": 0
     },
     {
-      "id": "wKmuMu7BgCQuVdtB",
-      "name": "Black Knight 2",
-      "seedId": "knight-black-1",
-      "pieceType": "knight",
+      "id": "ygZfDeT6Ds6uGKTF",
+      "name": "Black Bishop 2",
+      "seedId": "bishop-black-1",
+      "pieceType": "bishop",
       "side": "black",
       "file": 1,
       "rank": 0,
       "hasMoved": false,
       "x": 80,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "yl5jOxOiqoWyUOpp",
+      "id": "QRwtQI9mua5LWHZB",
       "name": "Black Knight 3",
       "seedId": "knight-black-2",
       "pieceType": "knight",
@@ -169,23 +217,23 @@
       "rotation": 0
     },
     {
-      "id": "b8tqq4pZlS3kdmie",
-      "name": "Black Knight 4",
-      "seedId": "knight-black-3",
-      "pieceType": "knight",
+      "id": "Gf3QypcRSQ2B0kjC",
+      "name": "Black Bishop 4",
+      "seedId": "bishop-black-3",
+      "pieceType": "bishop",
       "side": "black",
       "file": 3,
       "rank": 0,
       "hasMoved": false,
       "x": 240,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "7PfdvoRtVWoDTbiN",
+      "id": "ry1O4M0nPmLGwqFL",
       "name": "Black Knight 5",
       "seedId": "knight-black-4",
       "pieceType": "knight",
@@ -201,23 +249,23 @@
       "rotation": 0
     },
     {
-      "id": "QlrKCc2tWt8RzI4H",
-      "name": "Black Knight 6",
-      "seedId": "knight-black-5",
-      "pieceType": "knight",
+      "id": "RiI8cZflUJzKzVUJ",
+      "name": "Black Bishop 6",
+      "seedId": "bishop-black-5",
+      "pieceType": "bishop",
       "side": "black",
       "file": 5,
       "rank": 0,
       "hasMoved": false,
       "x": 400,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "MR2aWqtGfYtg4RVb",
+      "id": "9nEwA2kzYqTRWieW",
       "name": "Black Knight 7",
       "seedId": "knight-black-6",
       "pieceType": "knight",
@@ -233,23 +281,23 @@
       "rotation": 0
     },
     {
-      "id": "mevrWp1VcYIlxO8w",
-      "name": "Black Knight 8",
-      "seedId": "knight-black-7",
-      "pieceType": "knight",
+      "id": "QL9sB1vNWaDOtskY",
+      "name": "Black King 8",
+      "seedId": "king-black-7",
+      "pieceType": "king",
       "side": "black",
       "file": 7,
       "rank": 0,
       "hasMoved": false,
       "x": 560,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-king.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "c9qrr34BrhmUqgKU",
+      "id": "N8rNY9TO6bZnG8WW",
       "name": "Black Knight 9",
       "seedId": "knight-black-8",
       "pieceType": "knight",
@@ -265,23 +313,23 @@
       "rotation": 0
     },
     {
-      "id": "WAQSQOs0iG23L8hu",
-      "name": "Black Knight 10",
-      "seedId": "knight-black-9",
-      "pieceType": "knight",
+      "id": "Zd0JFiA3B1oSTD6Y",
+      "name": "Black Bishop 10",
+      "seedId": "bishop-black-9",
+      "pieceType": "bishop",
       "side": "black",
       "file": 9,
       "rank": 0,
       "hasMoved": false,
       "x": 720,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "SJKXDSBAaLWDDE4E",
+      "id": "q0ZJvZjctiKLbMQC",
       "name": "Black Knight 11",
       "seedId": "knight-black-10",
       "pieceType": "knight",
@@ -297,23 +345,23 @@
       "rotation": 0
     },
     {
-      "id": "OQFW7VpKxmQiqDGj",
-      "name": "Black Knight 12",
-      "seedId": "knight-black-11",
-      "pieceType": "knight",
+      "id": "BqSRjqsc8AaDTNvH",
+      "name": "Black Bishop 12",
+      "seedId": "bishop-black-11",
+      "pieceType": "bishop",
       "side": "black",
       "file": 11,
       "rank": 0,
       "hasMoved": false,
       "x": 880,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "yQxHhPdcbmTyiR5w",
+      "id": "KI4tnY9nNX5hx2oH",
       "name": "Black Knight 13",
       "seedId": "knight-black-12",
       "pieceType": "knight",
@@ -329,23 +377,23 @@
       "rotation": 0
     },
     {
-      "id": "nCZ9kl1OYL1gjov9",
-      "name": "Black Knight 14",
-      "seedId": "knight-black-13",
-      "pieceType": "knight",
+      "id": "IBWUZoT1NqqTKQ5K",
+      "name": "Black Bishop 14",
+      "seedId": "bishop-black-13",
+      "pieceType": "bishop",
       "side": "black",
       "file": 13,
       "rank": 0,
       "hasMoved": false,
       "x": 1040,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     },
     {
-      "id": "vDrXFEqVWsx77i6g",
+      "id": "Y1UFTd2W3tHR6gDI",
       "name": "Black Knight 15",
       "seedId": "knight-black-14",
       "pieceType": "knight",
@@ -361,23 +409,23 @@
       "rotation": 0
     },
     {
-      "id": "U3catsaENIS9Hx1H",
-      "name": "Black Knight 16",
-      "seedId": "knight-black-15",
-      "pieceType": "knight",
+      "id": "QjhKcoh8LAK2gZkJ",
+      "name": "Black Bishop 16",
+      "seedId": "bishop-black-15",
+      "pieceType": "bishop",
       "side": "black",
       "file": 15,
       "rank": 0,
       "hasMoved": false,
       "x": 1200,
       "y": 0,
-      "textureSrc": "systems/pawn16/assets/black-knight.svg",
+      "textureSrc": "systems/pawn16/assets/black-bishop.svg",
       "actorLink": true,
       "lockRotation": true,
       "rotation": 0
     }
   ],
-  "boardText": null,
+  "boardText": "Board (top = highest rank)\nLegend: WP/BP=pawn, WN/BN=knight, WB/BB=bishop, WK/BK=king, ..=empty, *N=stacked\n\n15 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n14 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n13 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n12 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n11 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n10 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n09 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n08 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n07 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n06 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n05 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n04 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n03 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n02 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n01 | .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..\n00 | BN BB BN BB BN BB BN BK BN BB BN BB BN BB BN BB\n    00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15",
   "uiVerify": {
     "enabled": false,
     "ok": true,

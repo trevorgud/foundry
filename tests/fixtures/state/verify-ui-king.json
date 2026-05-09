@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "1.0.0",
+  "ok": true,
+  "generatedAt": "2026-05-09T19:21:17.142Z",
+  "options": {
+    "reset": true,
+    "seededOnly": true,
+    "side": null,
+    "pieceType": "king",
+    "movedOnly": false,
+    "fileMin": null,
+    "fileMax": null,
+    "rankMin": null,
+    "rankMax": null,
+    "text": false,
+    "verifyUi": true,
+    "strict": true
+  },
+  "health": {
+    "ok": true,
+    "issues": [],
+    "state": {
+      "system": "pawn16",
+      "world": "pawn16-test",
+      "user": {
+        "name": "Gamemaster",
+        "isGM": true
+      },
+      "ready": true,
+      "paused": false,
+      "activeScene": "Pawn16 Board",
+      "scene": {
+        "name": "Pawn16 Board",
+        "active": true,
+        "width": 1280,
+        "height": 1280,
+        "backgroundColor": "#999999",
+        "gridType": 1,
+        "gridSize": 80,
+        "gridDistance": 1,
+        "gridUnits": "sq",
+        "tiles": 0,
+        "boardImageTiles": 0,
+        "tokens": 64,
+        "pieceTokens": 64,
+        "pawnTokens": 32,
+        "knightTokens": 16,
+        "bishopTokens": 14,
+        "kingTokens": 2
+      },
+      "pieces": {
+        "pawns": {
+          "white": {
+            "count": 16,
+            "expectedRank": 14,
+            "ranks": {
+              "14": 16
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 16,
+            "expectedRank": 1,
+            "ranks": {
+              "1": 16
+            },
+            "unexpectedRanks": []
+          },
+          "count": 32
+        },
+        "knights": {
+          "white": {
+            "count": 8,
+            "expectedRank": 15,
+            "ranks": {
+              "15": 8
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 8,
+            "expectedRank": 0,
+            "ranks": {
+              "0": 8
+            },
+            "unexpectedRanks": []
+          },
+          "count": 16
+        },
+        "bishops": {
+          "white": {
+            "count": 7,
+            "expectedRank": 15,
+            "ranks": {
+              "15": 7
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 7,
+            "expectedRank": 0,
+            "ranks": {
+              "0": 7
+            },
+            "unexpectedRanks": []
+          },
+          "count": 14
+        },
+        "kings": {
+          "white": {
+            "count": 1,
+            "expectedRank": 15,
+            "ranks": {
+              "15": 1
+            },
+            "unexpectedRanks": []
+          },
+          "black": {
+            "count": 1,
+            "expectedRank": 0,
+            "ranks": {
+              "0": 1
+            },
+            "unexpectedRanks": []
+          },
+          "count": 2
+        },
+        "rotated": 0,
+        "unlockedRotation": 0,
+        "unlinked": 0
+      }
+    }
+  },
+  "turnState": {
+    "currentSide": "white",
+    "turnNumber": 1,
+    "movementUsed": false,
+    "attackUsed": false
+  },
+  "scene": {
+    "name": "Pawn16 Board",
+    "width": 1280,
+    "height": 1280,
+    "gridSize": 80,
+    "boardSize": 16,
+    "tokenCount": 64
+  },
+  "diagnostics": {
+    "seed": {
+      "expectedSeedCount": 64,
+      "seededTokenCount": 64,
+      "seededCounts": {
+        "byPieceType": {
+          "pawn": 32,
+          "knight": 16,
+          "bishop": 14,
+          "king": 2
+        },
+        "bySide": {
+          "white": 32,
+          "black": 32
+        }
+      },
+      "duplicateSeedIds": [],
+      "missingSeedIds": [],
+      "unseededPieceTokens": []
+    },
+    "filteredCount": 2
+  },
+  "tokens": [
+    {
+      "id": "WUMVnQm3tr1D3Bcm",
+      "name": "White King 8",
+      "seedId": "king-white-7",
+      "pieceType": "king",
+      "side": "white",
+      "file": 7,
+      "rank": 15,
+      "hasMoved": false,
+      "x": 560,
+      "y": 1200,
+      "textureSrc": "systems/pawn16/assets/white-king.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    },
+    {
+      "id": "cMfYhl2J2SVg8yFp",
+      "name": "Black King 8",
+      "seedId": "king-black-7",
+      "pieceType": "king",
+      "side": "black",
+      "file": 7,
+      "rank": 0,
+      "hasMoved": false,
+      "x": 560,
+      "y": 0,
+      "textureSrc": "systems/pawn16/assets/black-king.svg",
+      "actorLink": true,
+      "lockRotation": true,
+      "rotation": 0
+    }
+  ],
+  "boardText": null,
+  "uiVerify": {
+    "enabled": true,
+    "ok": true,
+    "issues": []
+  }
+}

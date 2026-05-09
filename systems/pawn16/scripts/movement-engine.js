@@ -10,22 +10,83 @@ export const PATH_RULE = {
   IGNORE: "ignore"
 };
 
-export function getMovementProfile(pieceType) {
-  if (pieceType === "knight") return knightMovementProfile();
-  return pawnMovementProfile();
+export const ACTION_TYPE = {
+  MOVE: "move",
+  ATTACK: "attack"
+};
+
+const ORTHOGONAL_DIRECTIONS = ["forward", "backward", "left", "right"];
+const DIAGONAL_DIRECTIONS = ["forwardLeft", "forwardRight", "backwardLeft", "backwardRight"];
+const ADJACENT_DIRECTIONS = [...ORTHOGONAL_DIRECTIONS, ...DIAGONAL_DIRECTIONS];
+
+export function getPieceProfile(pieceType) {
+  switch (pieceType) {
+    case "bishop":
+      return bishopProfile();
+    case "king":
+      return kingProfile();
+    case "knight":
+      return knightProfile();
+    case "pawn":
+    default:
+      return pawnProfile();
+  }
 }
 
-export function pawnMovementProfile() {
+export function getMovementProfile(pieceType) {
+  return getPieceProfile(pieceType);
+}
+
+export function pawnProfile() {
   return {
     pieceType: "pawn",
     patterns: [
       {
         id: "pawn-step",
-        actionType: "move",
-        kind: "move",
-        directions: ["forward", "backward", "left", "right"],
+        actionType: ACTION_TYPE.MOVE,
+        kind: ACTION_TYPE.MOVE,
+        directions: ORTHOGONAL_DIRECTIONS,
         exactDistances: [1],
         target: MOVE_TARGET.EMPTY,
+        path: PATH_RULE.IGNORE
+      },
+      {
+        id: "pawn-strike",
+        actionType: ACTION_TYPE.ATTACK,
+        kind: ACTION_TYPE.ATTACK,
+        directions: ADJACENT_DIRECTIONS,
+        exactDistances: [1],
+        target: MOVE_TARGET.ENEMY,
+        path: PATH_RULE.IGNORE
+      }
+    ]
+  };
+}
+
+export function pawnMovementProfile() {
+  return pawnProfile();
+}
+
+export function knightProfile() {
+  return {
+    pieceType: "knight",
+    patterns: [
+      {
+        id: "knight-orthogonal-step",
+        actionType: ACTION_TYPE.MOVE,
+        kind: ACTION_TYPE.MOVE,
+        directions: ORTHOGONAL_DIRECTIONS,
+        distance: { min: 1, max: 2 },
+        target: MOVE_TARGET.EMPTY,
+        path: PATH_RULE.CLEAR
+      },
+      {
+        id: "knight-orthogonal-strike",
+        actionType: ACTION_TYPE.ATTACK,
+        kind: ACTION_TYPE.ATTACK,
+        directions: ORTHOGONAL_DIRECTIONS,
+        exactDistances: [1],
+        target: MOVE_TARGET.ENEMY,
         path: PATH_RULE.IGNORE
       }
     ]
@@ -33,27 +94,80 @@ export function pawnMovementProfile() {
 }
 
 export function knightMovementProfile() {
+  return knightProfile();
+}
+
+export function bishopProfile() {
   return {
-    pieceType: "knight",
+    pieceType: "bishop",
     patterns: [
       {
-        id: "knight-orthogonal-step",
-        actionType: "move",
-        kind: "move",
-        directions: ["forward", "backward", "left", "right"],
-        distance: { min: 1, max: 2 },
+        id: "bishop-step",
+        actionType: ACTION_TYPE.MOVE,
+        kind: ACTION_TYPE.MOVE,
+        directions: ORTHOGONAL_DIRECTIONS,
+        exactDistances: [1],
         target: MOVE_TARGET.EMPTY,
+        path: PATH_RULE.IGNORE
+      },
+      {
+        id: "bishop-orthogonal-strike",
+        actionType: ACTION_TYPE.ATTACK,
+        kind: ACTION_TYPE.ATTACK,
+        directions: ORTHOGONAL_DIRECTIONS,
+        exactDistances: [2, 3],
+        target: MOVE_TARGET.ENEMY,
         path: PATH_RULE.CLEAR
       }
     ]
   };
 }
 
+export function kingProfile() {
+  return {
+    pieceType: "king",
+    patterns: [
+      {
+        id: "king-step",
+        actionType: ACTION_TYPE.MOVE,
+        kind: ACTION_TYPE.MOVE,
+        directions: ORTHOGONAL_DIRECTIONS,
+        exactDistances: [1],
+        target: MOVE_TARGET.EMPTY,
+        path: PATH_RULE.IGNORE
+      },
+      {
+        id: "king-strike",
+        actionType: ACTION_TYPE.ATTACK,
+        kind: ACTION_TYPE.ATTACK,
+        directions: ORTHOGONAL_DIRECTIONS,
+        exactDistances: [1],
+        target: MOVE_TARGET.ENEMY,
+        path: PATH_RULE.IGNORE
+      }
+    ]
+  };
+}
+
+export function generateLegalActions(position, piece, profile, { actionType = null } = {}) {
+  const actions = generateActions(position, piece, profile);
+  if (!actionType) return actions;
+  return actions.filter(action => action.actionType === actionType);
+}
+
 export function generateLegalMoves(position, piece, profile) {
+  return generateLegalActions(position, piece, profile, { actionType: ACTION_TYPE.MOVE });
+}
+
+export function generateLegalAttacks(position, piece, profile) {
+  return generateLegalActions(position, piece, profile, { actionType: ACTION_TYPE.ATTACK });
+}
+
+function generateActions(position, piece, profile) {
   if (!position || !piece || !profile?.patterns?.length) return [];
   if (typeof piece.file !== "number" || typeof piece.rank !== "number") return [];
 
-  const moves = [];
+  const actions = [];
   for (const pattern of profile.patterns) {
     const distances = expandDistances(pattern);
     for (const direction of pattern.directions ?? []) {
@@ -73,9 +187,9 @@ export function generateLegalMoves(position, piece, profile) {
         const occupant = pieceAt(position, to.file, to.rank);
         if (!targetAllowed(pattern.target, piece, occupant)) continue;
 
-        moves.push({
-          actionType: pattern.actionType ?? "move",
-          kind: pattern.kind ?? "move",
+        actions.push({
+          actionType: pattern.actionType ?? ACTION_TYPE.MOVE,
+          kind: pattern.kind ?? pattern.actionType ?? ACTION_TYPE.MOVE,
           patternId: pattern.id,
           direction,
           distance,
@@ -90,15 +204,15 @@ export function generateLegalMoves(position, piece, profile) {
     }
   }
 
-  return moves;
+  return actions;
 }
 
-export function toLegacyMove(move) {
+export function toLegacyMove(action) {
   return {
-    file: move.to.file,
-    rank: move.to.rank,
-    kind: move.kind,
-    tokenId: move.capture?.tokenId ?? null
+    file: action.to.file,
+    rank: action.to.rank,
+    kind: action.kind,
+    tokenId: action.capture?.tokenId ?? null
   };
 }
 

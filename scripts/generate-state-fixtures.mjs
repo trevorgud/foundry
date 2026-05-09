@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 
 const fixtureDir = path.resolve("tests/fixtures/state");
 await fs.mkdir(fixtureDir, { recursive: true });
+await removeExistingFixtures();
 
 const cases = [
   {
@@ -12,27 +13,27 @@ const cases = [
     env: {}
   },
   {
-    name: "filtered-knight-black",
+    name: "filtered-bishop-white",
     env: {
       STATE_SEEDED_ONLY: "1",
-      STATE_PIECE_TYPE: "knight",
-      STATE_SIDE: "black"
+      STATE_PIECE_TYPE: "bishop",
+      STATE_SIDE: "white"
     }
   },
   {
-    name: "text-knight-black",
+    name: "text-back-rank-black",
     env: {
       STATE_SEEDED_ONLY: "1",
-      STATE_PIECE_TYPE: "knight",
       STATE_SIDE: "black",
-      STATE_TEXT: "1"
+      STATE_TEXT: "1",
+      STATE_RANK_MAX: "0"
     }
   },
   {
-    name: "verify-ui-knight",
+    name: "verify-ui-king",
     env: {
       STATE_SEEDED_ONLY: "1",
-      STATE_PIECE_TYPE: "knight",
+      STATE_PIECE_TYPE: "king",
       STATE_VERIFY_UI: "1"
     }
   }
@@ -82,4 +83,11 @@ async function runStateCapture(outputPath, envOverrides) {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function removeExistingFixtures() {
+  const entries = await fs.readdir(fixtureDir, { withFileTypes: true });
+  await Promise.all(entries
+    .filter(entry => entry.isFile() && entry.name.endsWith(".json"))
+    .map(entry => fs.rm(path.join(fixtureDir, entry.name))));
 }

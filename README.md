@@ -82,7 +82,7 @@ To try it:
 
 4. Launch the world as GM.
 
-When the world opens, the system seeds a native 16x16 Foundry grid scene named `Pawn16 Board`, 16 white pawns, 16 black pawns, 16 white knights, 16 black knights, and two helper macros. Select one piece and use the `Pawn16: Move Selected Piece` token control or macro to make a legal move for that piece type.
+When the world opens, the system seeds a native 16x16 Foundry grid scene named `Pawn16 Board`. Each side has a front row of 16 pawns and a back row with one king, eight knights, and seven bishops. Select one piece and use the `Pawn16: Move Selected Piece` or `Pawn16: Attack Selected Piece` token controls/macros to spend that side's one move or one attack for the turn.
 
 The generated world data remains local under `foundry-data/` and is ignored by Git.
 
@@ -133,8 +133,9 @@ The smoke test launches the `pawn16-test` world, logs in as `Gamemaster`, resets
 - no seeded board image tiles exist
 - 64 seeded piece tokens exist
 - piece rotations are locked at `0`
-- white and black pawns are on their starting ranks
-- white and black knights are on their starting ranks
+- white and black pawns are on their front ranks
+- kings, bishops, and knights are on their back ranks
+- starting turn state allows white one movement and one attack
 
 The main feedback artifact is JSON at `test-results/pawn16-state.json`. Screenshots are saved locally for debugging and are ignored by Git.
 
@@ -142,7 +143,8 @@ For targeted debugging, `state-debug` supports environment filters:
 
 ```bash
 STATE_SEEDED_ONLY=1 make state-debug
-STATE_PIECE_TYPE=knight STATE_SIDE=black make state-debug
+STATE_PIECE_TYPE=bishop STATE_SIDE=white make state-debug
+STATE_PIECE_TYPE=king STATE_VERIFY_UI=1 make state-debug
 STATE_TEXT=1 STATE_FILE_MIN=0 STATE_FILE_MAX=7 make state-debug
 STATE_VERIFY_UI=1 make state-debug
 ```
@@ -150,7 +152,7 @@ STATE_VERIFY_UI=1 make state-debug
 Schema contract:
 
 - Schema file: `docs/schemas/pawn16-state.schema.json`
-- Output includes `schemaVersion`
+- Output includes `schemaVersion` and `turnState`
 - Fast check: `make test-state-schema`
 - Live check: `make test-state-schema-live`
 

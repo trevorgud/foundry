@@ -61,19 +61,21 @@ pixelToSquare(x, y)
 legalPawnMoves(pawn, occupied)
 ```
 
-Pawn movement resolution now flows through:
+Piece action resolution now flows through:
 
-- `systems/pawn16/scripts/movement-engine.js` (pure move engine)
+- `systems/pawn16/scripts/movement-engine.js` (pure action engine; still named for compatibility)
 - `systems/pawn16/scripts/movement-adapters.js` (Foundry-to-engine adapters)
 
-The engine evaluates declarative capability patterns (directions, distances, occupancy targets, and path rules) and returns normalized move objects. The current pawn behavior is defined as a profile in the engine and then adapted back to legacy move shape where needed.
+The engine evaluates declarative capability patterns (action type, directions, distances, occupancy targets, and path rules) and returns normalized action objects. Movement helpers still adapt actions back to the legacy move shape where needed.
 
 Current piece profiles:
 
-- `pawn`: exactly one square forward/backward/left/right onto empty squares
-- `knight` (custom Pawn16 type): one or two squares forward/backward/left/right onto empty squares, with path blocking on two-square moves
+- `pawn`: moves one orthogonal square; attacks one adjacent orthogonal or diagonal enemy
+- `knight` (custom Pawn16 type): moves one or two orthogonal squares with clear path; attacks one orthogonal enemy
+- `bishop`: moves one orthogonal square; attacks exactly two or three orthogonal squares with clear path
+- `king`: moves one orthogonal square; attacks one orthogonal enemy
 
-The current interaction moves a selected piece according to its profile. There is not yet a full turn system or player-side enforcement.
+The current interaction allows the active side to spend one movement and one attack per turn. This is a lightweight scene-flag turn model, not yet a full multiplayer ownership system.
 
 ## Seeding
 
@@ -85,10 +87,10 @@ On GM `ready`, if `pawn16.autoSeed` is enabled, it:
 - ensures the scene is `1280x1280`
 - uses Foundry's native square grid at `80px`
 - removes stale seeded board-image tiles
-- ensures 16 white and 16 black pawn actors
-- ensures 16 white and 16 black knight actors
+- ensures 16 white and 16 black pawn actors on the front ranks
+- ensures one king, eight knights, and seven bishops per side on the back ranks
 - ensures linked seeded piece tokens
-- creates helper macros
+- creates move, attack, end-turn, and reset helper macros
 - unpauses the game
 
 The seeder is intended to be idempotent. It should create or reconcile missing/stale pieces instead of requiring committed world database files.
@@ -109,6 +111,12 @@ game.pawn16.assertHealthy()
 game.pawn16.resetBoard()
 game.pawn16.seedWorld()
 game.pawn16.unpause()
+game.pawn16.legalMovesForPiece()
+game.pawn16.legalAttacksForPiece()
+game.pawn16.movePiece()
+game.pawn16.attackPiece()
+game.pawn16.endTurn()
+game.pawn16.turnState()
 game.pawn16.moveSelectedPawnForward()
 ```
 
@@ -130,18 +138,19 @@ The expected healthy state includes:
 - 64 seeded piece tokens
 - white pawns on rank 14
 - black pawns on rank 1
-- white knights on rank 15
-- black knights on rank 0
+- white back-rank pieces on rank 15
+- black back-rank pieces on rank 0
+- 16 knights, 14 bishops, and 2 kings
 - no rotated or rotation-unlocked seeded piece tokens
 
 Foundry/Playwright details are in `docs/foundry-v14-playwright-notes.md`.
 
 ## Current Limitations
 
-- No turn manager.
+- Turn state is intentionally minimal: one move and one attack per side turn.
 - No player assignment for white vs black.
 - No rule enforcement for arbitrary drag movement beyond rotation and state sync.
-- No capture UI.
+- Attack execution removes the target token, but there is no damage model, combat log, or win detection.
 - No win/draw detection.
 - No ownership automation for regular players.
 

@@ -113,6 +113,11 @@ game.pawn16.testState()
 game.pawn16.assertHealthy()
 game.pawn16.unpause()
 game.pawn16.moveSelectedPawnForward()
+game.pawn16.movePiece()
+game.pawn16.attackPiece()
+game.pawn16.legalAttacksForPiece()
+game.pawn16.endTurn()
+game.pawn16.turnState()
 ```
 
 Prefer reading this structured API instead of scraping UI text or inspecting screenshots.
@@ -138,7 +143,7 @@ scene.height === 1280
 scene.grid.size === 80
 scene.grid.distance === 1
 scene.tiles.size === 0
-scene.tokens.size === 32
+scene.tokens.size === 64
 ```
 
 Pawn checks:
@@ -146,6 +151,12 @@ Pawn checks:
 ```js
 white pawn count === 16
 black pawn count === 16
+white knight count === 8
+black knight count === 8
+white bishop count === 7
+black bishop count === 7
+white king count === 1
+black king count === 1
 white rank === 14
 black rank === 1
 token.rotation === 0
