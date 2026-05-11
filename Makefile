@@ -1,8 +1,13 @@
 COMPOSE_DEV = docker compose -f compose.yml -f compose.dev.yml
 TEST_DEPS = test -d node_modules/@playwright/test || npm ci
 STATE_ENV = -e FOUNDRY_STATE_OUTPUT -e STATE_RESET -e STATE_SEEDED_ONLY -e STATE_SIDE -e STATE_PIECE_TYPE -e STATE_MOVED_ONLY -e STATE_FILE_MIN -e STATE_FILE_MAX -e STATE_RANK_MIN -e STATE_RANK_MAX -e STATE_TEXT -e STATE_VERIFY_UI -e STATE_STRICT
+IMAGE_NAME ?= foundry-pawn16
+IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
+FOUNDRY_BASE_IMAGE ?= ghcr.io/felddy/foundryvtt:14.360.0
+DOCKER_IMAGE ?= $(if $(DOCKERHUB_NAMESPACE),docker.io/$(DOCKERHUB_NAMESPACE)/$(IMAGE_NAME),$(IMAGE_NAME))
+RUNTIME_DOCKERFILE = scripts/foundry-runtime.Dockerfile
 
-.PHONY: up down restart logs dev-up dev-restart dev-logs dev-shell configure-world test-all test-engine test-state-schema test-state-schema-live test-foundry test-foundry-health test-foundry-rules test-foundry-local state state-debug state-fixtures screenshot
+.PHONY: up down restart logs dev-up dev-restart dev-logs dev-shell configure-world test-all test-engine test-state-schema test-state-schema-live test-foundry test-foundry-health test-foundry-rules test-foundry-local state state-debug state-fixtures screenshot image-build image-push image-release
 
 up:
 	docker compose up -d
@@ -65,3 +70,14 @@ state-fixtures:
 
 screenshot:
 	$(COMPOSE_DEV) run --rm test sh -lc '$(TEST_DEPS) && npm run foundry:screenshot'
+
+image-build:
+	docker build --pull \
+		-f $(RUNTIME_DOCKERFILE) \
+		--build-arg FOUNDRY_BASE_IMAGE=$(FOUNDRY_BASE_IMAGE) \
+		-t $(DOCKER_IMAGE):$(IMAGE_TAG) .
+
+image-push:
+	docker push $(DOCKER_IMAGE):$(IMAGE_TAG)
+
+image-release: image-build image-push

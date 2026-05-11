@@ -107,6 +107,9 @@ make up          # server-only Foundry runtime
 make restart     # server-only recreate
 make dev-up      # Foundry with dev/test overlay
 make dev-restart # recreate Foundry with pawn16-test auto-launched
+make image-build # build a distributable runtime image with Pawn16 system
+make image-push  # push that image tag to Docker Hub or another registry
+make image-release # build + push in one command
 make test-all    # engine + full Foundry suite
 make test-engine # pure movement engine unit tests
 make test-state-schema # fast fixture-based schema contract check
@@ -158,8 +161,49 @@ Schema contract:
 
 More implementation notes for Foundry v14 and Playwright are in `docs/foundry-v14-playwright-notes.md`.
 
+## Docker Hub Build and Push
+
+The repository includes a runtime Dockerfile at `scripts/foundry-runtime.Dockerfile` that layers the committed `systems/pawn16` source onto the pinned Foundry base image.
+
+Credential handling:
+
+- Put non-secret defaults in `.env` if convenient (`DOCKERHUB_NAMESPACE`, `IMAGE_NAME`, optional `IMAGE_TAG`, optional `FOUNDRY_IMAGE` override).
+- Do **not** store Docker Hub access tokens in `.env`, `.env.example`, or committed files.
+- Authenticate once locally with:
+
+  ```bash
+  docker login -u <dockerhub-namespace>
+  ```
+
+  and paste a Docker Hub Personal Access Token when prompted.
+
+Local release flow:
+
+```bash
+cp .env.example .env  # if not already present
+# set DOCKERHUB_NAMESPACE=<your-namespace> in .env
+make image-release    # build + push DOCKER_IMAGE:IMAGE_TAG
+```
+
+By default:
+
+- `IMAGE_NAME=foundry-pawn16`
+- `IMAGE_TAG=<current git short sha>`
+- `FOUNDRY_BASE_IMAGE=ghcr.io/felddy/foundryvtt:14.360.0`
+
+To run from the pushed image with compose:
+
+```bash
+FOUNDRY_IMAGE=docker.io/<dockerhub-namespace>/foundry-pawn16:<tag> docker compose up -d
+```
+
+CI recommendation:
+
+- Store `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` in your CI secret store (for example GitHub Actions secrets).
+- Log in in CI with `docker/login-action` or `docker login` using those secrets, then run `make image-release`.
+
 ## Notes
 
-- The compose file pins `ghcr.io/felddy/foundryvtt:14.360.0`, so the zip should be named `foundryvtt-14.360.zip`.
+- The default compose image is `ghcr.io/felddy/foundryvtt:14.360.0`, so the zip should be named `foundryvtt-14.360.zip`.
 - Do not commit the Foundry zip, license data, worlds, installed packages under `foundry-data/Data/`, or logs.
 - Persistent Foundry data lives in `foundry-data/`.

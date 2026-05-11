@@ -1,6 +1,6 @@
 services:
   foundry:
-    image: ghcr.io/felddy/foundryvtt:14.360.0
+    image: ${FOUNDRY_IMAGE:-ghcr.io/felddy/foundryvtt:14.360.0}
     container_name: foundry-test
     hostname: foundry-test
     restart: unless-stopped
