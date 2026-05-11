@@ -6,8 +6,9 @@ IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
 FOUNDRY_BASE_IMAGE ?= ghcr.io/felddy/foundryvtt:14.360.0
 DOCKER_IMAGE ?= $(if $(DOCKERHUB_NAMESPACE),docker.io/$(DOCKERHUB_NAMESPACE)/$(IMAGE_NAME),$(IMAGE_NAME))
 RUNTIME_DOCKERFILE = scripts/foundry-runtime.Dockerfile
+LOCAL_PROD_IMAGE = $(IMAGE_NAME):local
 
-.PHONY: up down restart logs dev-up dev-restart dev-logs dev-shell configure-world test-all test-engine test-state-schema test-state-schema-live test-foundry test-foundry-health test-foundry-rules test-foundry-local state state-debug state-fixtures screenshot image-build image-push image-release
+.PHONY: up down restart logs dev-up dev-restart dev-logs dev-shell configure-world test-all test-engine test-state-schema test-state-schema-live test-foundry test-foundry-health test-foundry-rules test-foundry-local state state-debug state-fixtures screenshot image-build image-push image-release prod-local-build prod-local-up prod-local-restart
 
 up:
 	docker compose up -d
@@ -81,3 +82,15 @@ image-push:
 	docker push $(DOCKER_IMAGE):$(IMAGE_TAG)
 
 image-release: image-build image-push
+
+prod-local-build:
+	docker build --pull \
+		-f $(RUNTIME_DOCKERFILE) \
+		--build-arg FOUNDRY_BASE_IMAGE=$(FOUNDRY_BASE_IMAGE) \
+		-t $(LOCAL_PROD_IMAGE) .
+
+prod-local-up: prod-local-build
+	FOUNDRY_IMAGE=$(LOCAL_PROD_IMAGE) docker compose up -d
+
+prod-local-restart: prod-local-build
+	FOUNDRY_IMAGE=$(LOCAL_PROD_IMAGE) docker compose up -d --force-recreate

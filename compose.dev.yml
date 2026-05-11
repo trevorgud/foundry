@@ -2,6 +2,8 @@ services:
   foundry:
     environment:
       - FOUNDRY_WORLD=pawn16-test
+    volumes:
+      - ./systems/pawn16:/data/Data/systems/pawn16:ro
 
   test:
     image: mcr.microsoft.com/playwright:v1.59.1-noble

@@ -16,4 +16,3 @@ services:
     volumes:
       - ./foundry-data:/data
       - ./foundry-install:/data/container_cache
-      - ./systems/pawn16:/data/Data/systems/pawn16:ro

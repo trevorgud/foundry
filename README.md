@@ -88,7 +88,7 @@ The generated world data remains local under `foundry-data/` and is ignored by G
 
 ## Automated Checks
 
-The repo includes a dev/test overlay at `compose.dev.yml`. The base `compose.yml` remains the simple game-server runtime; the dev overlay adds Dockerized Playwright and forces the local `pawn16-test` world for automation.
+The repo includes a dev/test overlay at `compose.dev.yml`. The base `compose.yml` remains the production/server runtime; the dev overlay adds Dockerized Playwright, forces the local `pawn16-test` world for automation, and bind-mounts local `systems/pawn16` source for rapid iteration.
 
 ```bash
 make dev-restart
@@ -105,6 +105,8 @@ Useful targets:
 ```bash
 make up          # server-only Foundry runtime
 make restart     # server-only recreate
+make prod-local-up # build local prod image and run compose.yml with it
+make prod-local-restart # rebuild local prod image and force recreate
 make dev-up      # Foundry with dev/test overlay
 make dev-restart # recreate Foundry with pawn16-test auto-launched
 make image-build # build a distributable runtime image with Pawn16 system
@@ -163,7 +165,7 @@ More implementation notes for Foundry v14 and Playwright are in `docs/foundry-v1
 
 ## Docker Hub Build and Push
 
-The repository includes a runtime Dockerfile at `scripts/foundry-runtime.Dockerfile` that layers the committed `systems/pawn16` source onto the pinned Foundry base image.
+The repository includes a runtime Dockerfile at `scripts/foundry-runtime.Dockerfile` that bakes committed `systems/pawn16` source into the image and syncs it into `/data/Data/systems/pawn16` at container startup before handing off to the Foundry base entrypoint.
 
 Credential handling:
 
@@ -195,6 +197,20 @@ To run from the pushed image with compose:
 
 ```bash
 FOUNDRY_IMAGE=docker.io/<dockerhub-namespace>/foundry-pawn16:<tag> docker compose up -d
+```
+
+For local prod-like runs without Docker Hub:
+
+```bash
+make prod-local-restart
+```
+
+This builds `foundry-pawn16:local` and runs base `compose.yml` against that local image automatically.
+
+For local development, continue to use the dev overlay so local `systems/pawn16` changes are bind-mounted over the runtime copy:
+
+```bash
+make dev-restart
 ```
 
 CI recommendation:
